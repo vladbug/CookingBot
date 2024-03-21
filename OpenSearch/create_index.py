@@ -6,7 +6,10 @@ import pprint as pp
 
 global client
 global index_name
-def create_index() -> Tuple[OpenSearch,str] :
+
+
+def connect():
+
     env_file = open("OpenSearch/env_config.txt",'r')
     host_name = env_file.readline().split("=")[1].strip()
     port = int(env_file.readline().split("=")[1].strip())
@@ -15,7 +18,6 @@ def create_index() -> Tuple[OpenSearch,str] :
     global index_name
     index_name = user_name
 
-    
     # Create the client with SSL/TLS enabled, but hostname verification disabled.
     global client
     client = OpenSearch(
@@ -30,8 +32,11 @@ def create_index() -> Tuple[OpenSearch,str] :
     ssl_assert_hostname = False,
     ssl_show_warn = False
     #, ca_certs = ca_certs_path
-)
-    
+    )
+    print(client)
+    return client,index_name
+
+def create_index(client) -> Tuple[OpenSearch,str] :
     index_body = {
         "settings":{
             "index":{
@@ -137,11 +142,13 @@ def add_recipe(id: int, recipe : dict) -> dict:
     return resp
 
 def query():
+    connect()
     query = "tomato"
     query_emb = tr.encode(query)
 
     query_denc = {
     "size": 5,
+    '_source': 'recipeName',
     "query": {
         "knn": {
             "sentence_embedding": {
@@ -151,9 +158,7 @@ def query():
         }
     }
    }
-
     response = client.search(index=index_name, body=query_denc)
     print('\nSearch Result:')
     pp.pprint(response)
-    pp.pprint(client.cat.count(index=index_name, params={"format": "json"}))
 #create_index()

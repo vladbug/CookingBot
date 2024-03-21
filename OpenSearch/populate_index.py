@@ -1,6 +1,6 @@
 import pprint as pp
 import OpenSearch.transformer as tr
-import OpenSearch.create_index as indexUtil
+import OpenSearch.opensearch as OpenSearchUtil
 import numpy as np
 from transformers import AutoTokenizer, AutoModel
 import torch
@@ -11,7 +11,7 @@ def embed_recipes(recipes, embeding_text):
     recipe_emb = tr.encode(embeding_text)
     for i,recipe in enumerate(recipes):
         recipe["sentence_embedding"] = recipe_emb[i].numpy()
-        res = indexUtil.add_recipe(i, recipe)
+        res = OpenSearchUtil.opensearch_end.add_recipe(i, recipe)
         print(res["result"])
         
 
