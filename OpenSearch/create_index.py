@@ -1,16 +1,23 @@
 from typing import Tuple
+import OpenSearch.transformer as tr
 from opensearchpy import OpenSearch
+import pprint as pp
 
+
+global client
+global index_name
 def create_index() -> Tuple[OpenSearch,str] :
     env_file = open("OpenSearch/env_config.txt",'r')
     host_name = env_file.readline().split("=")[1].strip()
     port = int(env_file.readline().split("=")[1].strip())
     user_name = env_file.readline().split("=")[1].strip()
     pwd = env_file.readline().split("=")[1].strip()
+    global index_name
     index_name = user_name
 
     
     # Create the client with SSL/TLS enabled, but hostname verification disabled.
+    global client
     client = OpenSearch(
     hosts = [{'host': host_name, 'port': port}],
     http_compress = True, # enables gzip compression for request bodies
@@ -84,7 +91,7 @@ def create_index() -> Tuple[OpenSearch,str] :
                 "contents":{ 
                     "type":"text",
                     "analyzer": "standard",
-                    #"analyzer":"my_analyzer",
+                    #"analyzer":"my_analyzer", we can after add the spell checking here
                     "similarity":"BM25"
                 },
                 "sentence_embedding":{
@@ -115,8 +122,8 @@ def create_index() -> Tuple[OpenSearch,str] :
             return (client, index_name)
 
 def delete_index(client : OpenSearch,index_name : str) -> None:
-    answer = input("ARE YOU ABSOLUTELY SURE YOU WANT TO DELETE THE INDEX?\nPlease type: \"I am sure of it\" if you are: ")
-    if(answer == "I am sure of it"):
+    #answer = input("ARE YOU ABSOLUTELY SURE YOU WANT TO DELETE THE INDEX?\nPlease type: \"I am sure of it\" if you are: ")
+    if(True):
         if client.indices.exists(index=index_name):
             # Delete the index.
             response = client.indices.delete(
@@ -125,5 +132,28 @@ def delete_index(client : OpenSearch,index_name : str) -> None:
             )
             print("Deleted: {0}".format(response["acknowledged"]))
     
-   
-create_index()
+def add_recipe(id: int, recipe : dict) -> dict:
+    resp = client.index(index=index_name, id=id, body=recipe)
+    return resp
+
+def query():
+    query = "tomato"
+    query_emb = tr.encode(query)
+
+    query_denc = {
+    "size": 5,
+    "query": {
+        "knn": {
+            "sentence_embedding": {
+                "vector": query_emb[0].numpy(),
+                "k": 2
+            }
+        }
+    }
+   }
+
+    response = client.search(index=index_name, body=query_denc)
+    print('\nSearch Result:')
+    pp.pprint(response)
+    pp.pprint(client.cat.count(index=index_name, params={"format": "json"}))
+#create_index()
