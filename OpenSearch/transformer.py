@@ -1,7 +1,10 @@
 from transformers import AutoTokenizer, AutoModel
 import torch
 import torch.nn.functional as F
-from sklearn.feature_extraction.text import CountVectorizer
+import pprint as pp
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
 
 tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/msmarco-distilbert-base-v2")
 model = AutoModel.from_pretrained("sentence-transformers/msmarco-distilbert-base-v2")
@@ -18,11 +21,6 @@ def mean_pooling(model_output, attention_mask):
 #Encode the text
 def encode(texts):
 
-    #Remove empty string and None strings
-    texts = [t for t in texts if t and t.strip()]
-
-  
-
     #Tokenize sentences
     encoded_input = tokenizer(texts, padding=True, truncation=True, return_tensors='pt')
 
@@ -36,7 +34,8 @@ def encode(texts):
 
     #Normalize the embeddings
     normalized_embeddings = F.normalize(embeddings,p=2,dim=1)
-
+    pp.pprint(normalized_embeddings)
+  
     return normalized_embeddings
 
 #Sentences we want to encode for our embedding

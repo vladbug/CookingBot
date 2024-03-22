@@ -7,18 +7,19 @@ import torch
 import torch.nn.functional as F
 from sklearn.feature_extraction.text import CountVectorizer
 
-def embed_recipes(recipes, embeding_text):
-    recipe_emb = tr.encode(embeding_text)
+def embed_recipes(recipes, embedding_text):
+    recipe_emb = tr.encode(embedding_text)
     for i,recipe in enumerate(recipes):
         recipe["sentence_embedding"] = recipe_emb[i].numpy()
         res = OpenSearchUtil.opensearch_end.add_recipe(i, recipe)
-        print(res["result"])
-        
+        pp.pprint(res)
+        pp.pprint(recipe)
+       
 
 
 def populate_index(data):
     recipes = []
-    embeding_text = []
+    embedding_text = []
     index = 0
     while True:
         try:
@@ -37,15 +38,23 @@ def populate_index(data):
             document_sample["diets"] = data[recipe_id]["diets"]
             document_sample["ingredients"] = [ing["displayText"] for ing in data[recipe_id]["ingredients"]]
             recipes.append(document_sample)
+
+            # vectorizer = CountVectorizer(ngram_range=(1,1), analyzer="word", stop_words='english')
+            # recipe_embedding_text = document_sample["recipeName"]
+            # vectorizer.fit_transform([recipe_embedding_text])  # Fit the vectorizer with the recipe name
+            # words = vectorizer.get_feature_names_out()  # Get the words from the recipe name
+            # embeding_text.update(words)
             vectorizer = CountVectorizer(ngram_range=(1,1),analyzer="word", stop_words='english')
             recipe_embeding_text = [document_sample["recipeName"] + " " + " ".join(document_sample["ingredients"])]
             vectorizer.fit_transform(recipe_embeding_text)
             recipe_embeding_text = " ".join(vectorizer.get_feature_names_out())
-            embeding_text.append(recipe_embeding_text)
+            #recipe_embeding_text = document_sample["recipeName"] + " " + " ".join(document_sample["ingredients"])
+            embedding_text.append(recipe_embeding_text)
+
             index += 1
         except KeyError:
             print("End of data")
-            embed_recipes(recipes, embeding_text)
+            embed_recipes(recipes, embedding_text)
             pp.pprint(document_sample)
             break
             

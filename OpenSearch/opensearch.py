@@ -12,22 +12,20 @@ class OpenSearchEnd:
         self._user_name = env_file.readline().split("=")[1].strip()
         self._pwd = env_file.readline().split("=")[1].strip()
         self.index_name = self._user_name
-        self.client = None
-    
-    def connect(self):
         self.client = OpenSearch(
             hosts = [{'host': self.host_name, 'port': self._port}],
             http_compress = True, # enables gzip compression for request bodies
             http_auth = (self._user_name, self._pwd),
             url_prefix = 'opensearch',
-            # client_cert = client_cert_path,
-            # client_key = client_key_path,
             use_ssl = True,
             verify_certs = False,
             ssl_assert_hostname = False,
             ssl_show_warn = False
-            #, ca_certs = ca_certs_path
             )
+    
+    def connect(self):
+        if self.client.indices.exists(self.index_name):
+            self.client.indices.open(index = self.index_name)
         return self.client
 
     def disconnect(self):
@@ -81,7 +79,7 @@ class OpenSearchEnd:
                         "type":"text",
                     },
                     "cuisines" : { #Array of cuisine types, "mexican", "Asian" etc..., [str]
-                    "type" : "text" 
+                        "type" : "text" 
                     },
                     "courses" : { #Array of course types, "main" "breakfast" "sides" etc..., [str]
                         "type" : "text"
@@ -122,7 +120,23 @@ class OpenSearchEnd:
             print('\nCreating index:')
             if(response["acknowledged"] == True):
                 print("Index created successfully!")
+        index_settings = {
+            "settings":{
+            "index":{
+                "refresh_interval" : "1s"
+            }
+        }
+        }
+        self.client.indices.put_settings(index = self.index_name, body = index_settings)
+        settings = self.client.indices.get_settings(index = self.index_name)
+        pp.pprint(settings)
 
+        print('\n----------------------------------------------------------------------------------- INDEX MAPPINGS')
+        mappings = self.client.indices.get_mapping(index = self.index_name)
+        pp.pprint(mappings)
+
+        print('\n----------------------------------------------------------------------------------- INDEX #DOCs')
+        print(self.client.count(index = self.index_name))
 
     
     def delete_index(self):
@@ -145,19 +159,18 @@ class OpenSearchEnd:
         query_emb = tr.encode(query)
 
         query_denc = {
-            "size": 5,
-            '_source': 'recipeName',
+           'size': 2,
+           "_source": ["recipeName","prepTimeMinutes","cookTimeMinutes","totalTimeMinutes","difficultyLevel","tools","ingredients"],
             "query": {
-                "knn": {
+                    "knn": {
                     "sentence_embedding": {
                         "vector": query_emb[0].numpy(),
-                        "k": 2
+                        "k": 3
                     }
-                }
+                    }
             }
         }
         response = self.client.search(index=self.index_name, body=query_denc)
-        pp.pprint(self.client.cat.count(index=self.index_name))
         print('\nSearch Result:')
         pp.pprint(response)
 

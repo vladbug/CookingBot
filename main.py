@@ -20,9 +20,9 @@ data = load_json()
     #populateIndex.populate_index(data=data)
 OpenSearchUtil.opensearch_end.disconnect()
 OpenSearchUtil.opensearch_end.connect()
+# OpenSearchUtil.opensearch_end.delete_index()
+# OpenSearchUtil.opensearch_end.create_index()
 #populateIndex.populate_index(data=data)
-#OpenSearchUtil.opensearch_end.create_index()
-#OpenSearchUtil.opensearch_end.delete_index()
 OpenSearchUtil.opensearch_end.query()
     
 
