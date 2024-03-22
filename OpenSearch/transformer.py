@@ -2,8 +2,6 @@ from transformers import AutoTokenizer, AutoModel
 import torch
 import torch.nn.functional as F
 import pprint as pp
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
 
 
 tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/msmarco-distilbert-base-v2")
@@ -34,7 +32,6 @@ def encode(texts):
 
     #Normalize the embeddings
     normalized_embeddings = F.normalize(embeddings,p=2,dim=1)
-    pp.pprint(normalized_embeddings)
   
     return normalized_embeddings
 
