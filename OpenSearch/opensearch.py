@@ -8,14 +8,14 @@ class OpenSearchEnd:
     def __init__(self):
         env_file = open("OpenSearch/env_config.txt",'r')
         self.host_name = env_file.readline().split("=")[1].strip()
-        self._port = int(env_file.readline().split("=")[1].strip())
-        self._user_name = env_file.readline().split("=")[1].strip()
-        self._pwd = env_file.readline().split("=")[1].strip()
-        self.index_name = self._user_name
+        self.__port = int(env_file.readline().split("=")[1].strip())
+        self.__user_name = env_file.readline().split("=")[1].strip()
+        self.__pwd = env_file.readline().split("=")[1].strip()
+        self.index_name = self.__user_name
         self.client = OpenSearch(
-            hosts = [{'host': self.host_name, 'port': self._port}],
+            hosts = [{'host': self.host_name, 'port': self.__port}],
             http_compress = True, # enables gzip compression for request bodies
-            http_auth = (self._user_name, self._pwd),
+            http_auth = (self.__user_name, self.__pwd),
             url_prefix = 'opensearch',
             use_ssl = True,
             verify_certs = False,
