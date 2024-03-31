@@ -4,6 +4,10 @@ import OpenSearch.opensearch as OpenSearchUtil
 from sklearn.feature_extraction.text import CountVectorizer
 import os
 import pickle
+import nltk
+nltk.download('averaged_perceptron_tagger')
+from ingredient_parser import parse_ingredient
+from deep_translator import GoogleTranslator
 
 def read_embedding_file(file_name):
     # Check if recipe_emb_file exists
@@ -18,8 +22,26 @@ def save_embedding_file(file_name, recipe_emb):
     with open(file_name, 'wb') as f:
         pickle.dump(recipe_emb, f)    
 
+# This function already receives the embedding of the ingredients
+def format_ingredients(embedding,recipe):
+    ing_obj = []
+    for idx, ing in enumerate(recipe["ingredients"]):
+        ing_obj.append({"name":ing["ingredient"], 
+                        "ingredient_embedding":embedding[idx].numpy()})
+    return ing_obj
+
+# deprecated - done in test.py
+def complete_ingredient(recipe):
+    translator = GoogleTranslator(source='auto', target='en')
+    for ing in recipe["ingredients"]:
+        if ing["ingredient"] is None:
+            myDisplayText = ing["displayText"]
+            ingredient =  translator.translate(myDisplayText)
+            ingredient = parse_ingredient(ingredient)["name"]
+            ing["ingredient"] = ingredient
+
 def populate_index(data):
-    embedding_files = ["sentence_embedding"]
+    embedding_files = ["Defs/sentence_embedding", "Defs/ingredient_embedding"]
     embeddings = {}
     save_flags = {}
     for file_name in embedding_files:
@@ -30,7 +52,7 @@ def populate_index(data):
         else:
             embeddings[file_name] = embedding_file
             save_flags[file_name] = False
-
+    pp.pprint(save_flags)
 
     for index in range(len(data)):
         recipe_sample = {}
@@ -46,20 +68,27 @@ def populate_index(data):
         recipe_sample["cuisines"] = data[recipe_id]["cuisines"]
         recipe_sample["courses"] = data[recipe_id]["courses"]
         recipe_sample["diets"] = data[recipe_id]["diets"]
-        recipe_sample["ingredients"] = [ing["displayText"] for ing in data[recipe_id]["ingredients"]]
-
+       
+        #complete ingredients
+        #complete_ingredient(data[recipe_id])
         #title ingredients embeddings
-        title_ing_text = recipe_sample["recipeName"] + " " + " ".join(recipe_sample["ingredients"])
-        embeddings_text = [title_ing_text]
+        ing_text = [ing["ingredient"] for ing in data[recipe_id]["ingredients"]]
+        title_ing_text = recipe_sample["recipeName"] + " " + " ".join(ing_text)
+
+        embeddings_text = [title_ing_text, ing_text]
 
        
         for file_name, embedding_text in zip(embedding_files, embeddings_text):
             if save_flags[file_name]:
-                embedding = tr.encode(embedding_text)[0].numpy()
+                embedding = tr.encode(embedding_text)
                 embeddings[file_name].append(embedding)
             else:
                 embedding = embeddings[file_name][index]
-            recipe_sample[f"{file_name}"] = embedding
+            index_field = file_name.split("/")[-1]
+            if index_field == "ingredient_embedding":
+               recipe_sample["ingredients"] = format_ingredients(embedding, data[recipe_id])
+            else:
+                recipe_sample[index_field] = embedding[0].numpy()
 
         res = OpenSearchUtil.opensearch_end.add_recipe(index, recipe_sample)
         pp.pprint(res)

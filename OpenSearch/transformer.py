@@ -4,8 +4,8 @@ import torch.nn.functional as F
 import pprint as pp
 
 
-tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/msmarco-distilbert-base-v2")
-model = AutoModel.from_pretrained("sentence-transformers/msmarco-distilbert-base-v2")
+tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-mpnet-base-v2")
+model = AutoModel.from_pretrained("sentence-transformers/all-mpnet-base-v2")
 
 #Mean pooling - Take average of all tokens
 def mean_pooling(model_output, attention_mask):

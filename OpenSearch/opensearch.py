@@ -88,7 +88,25 @@ class OpenSearchEnd:
                         "type" : "text"
                     },
                     "ingredients" : { #Array of ingredient names, didn't save quantity cos that can be loaded later, [str]
-                        "type" : "text", 
+                        "type": "nested",
+                        "properties": {
+                            "name": {
+                                "type": "text"
+                            },
+                            "ingredient_embedding":{
+                                "type":"knn_vector",
+                                "dimension": 768,
+                                "method":{
+                                    "name":"hnsw",
+                                    "space_type":"innerproduct",
+                                    "engine":"faiss",
+                                    "parameters":{
+                                        "ef_construction":256,
+                                        "m":48
+                                    }
+                                }
+                            }
+                        }
                     },
                     "contents":{ 
                         "type":"text",
@@ -163,12 +181,39 @@ class OpenSearchEnd:
            "_source": ["recipeName","prepTimeMinutes","cookTimeMinutes","totalTimeMinutes","difficultyLevel","tools","ingredients"],
             "query": {
                     "knn": {
-                    "sentence_embedding": {
+                    "ingredients.ingredient_embedding": {
                         "vector": query_emb[0].numpy(),
                         "k": 3
                     }
                     }
             }
+        }
+        response = self.client.search(index=self.index_name, body=query_denc)
+        print('\nSearch Result:')
+        pp.pprint(response)
+
+    def query_by_ingredient(self):
+        query = "gorgonzola"
+        query_emb = tr.encode(query)
+
+        query_denc = {
+            'size': 5,
+            "_source": ["recipeName","prepTimeMinutes","cookTimeMinutes","totalTimeMinutes","difficultyLevel","tools","ingredients.name"],
+            "query": {
+                "nested": {
+                    "path": "ingredients",
+                    "query": {
+                        "knn": {
+                            "ingredients.ingredient_embedding": {
+                                "vector": query_emb[0].numpy(),
+                                "k": 3
+                            }
+                        }
+                    }
+                
+                }
+            }
+           
         }
         response = self.client.search(index=self.index_name, body=query_denc)
         print('\nSearch Result:')
