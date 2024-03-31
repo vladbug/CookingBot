@@ -18,21 +18,30 @@ def mean_pooling(model_output, attention_mask):
 
 #Encode the text
 def encode(texts):
+    # Check for GPU availability and set the device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    #Tokenize sentences
+    torch.cuda.empty_cache()
+    # Move model to GPU
+    model.to(device)
+    
+    # Tokenize sentences
     encoded_input = tokenizer(texts, padding=True, truncation=True, return_tensors='pt')
-
-    #Compute token embeddings
+    
+    # Move input data to GPU
+    encoded_input = {k: v.to(device) for k, v in encoded_input.items()}
+    
+    # Compute token embeddings
     with torch.no_grad():
-        model_output = model(**encoded_input,return_dict=True)
-
-
-    #Perform pooling. In this case, mean pooling
+        model_output = model(**encoded_input, return_dict=True)
+    
+    # Perform pooling. In this case, mean pooling
     embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
-
-    #Normalize the embeddings
-    normalized_embeddings = F.normalize(embeddings,p=2,dim=1)
-  
+    
+    # Normalize the embeddings
+    normalized_embeddings = F.normalize(embeddings, p=2, dim=1)
+    # Move embeddings back to CPU and convert to numpy array
+    normalized_embeddings = normalized_embeddings.cpu()
     return normalized_embeddings
 
 #Sentences we want to encode for our embedding
