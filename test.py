@@ -8,8 +8,8 @@ tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-mpnet-base-
 model = AutoModel.from_pretrained("sentence-transformers/all-mpnet-base-v2")
 
 # Define two words
-word1 = "kitchen"
-word2 = "boy"
+word1 = "gorgonzola"
+word2 = "guacamole"
 
 # Tokenize and encode the words
 inputs = tokenizer([word1, word2], return_tensors="pt", padding=True, truncation=True)
@@ -33,12 +33,52 @@ cosine_similarity = cos_sim(embedding_word1, embedding_word2)
 print("Cosine similarity Score: {:.4f}".format(cosine_similarity))
 
 
-
+#___________________________________________________________________________________________________
 from ingredient_parser import parse_ingredient
 
 # Example usage
-parsed_ingredient = parse_ingredient("2 yellow onions, finely chopped")
+parsed_ingredient = parse_ingredient("1x cheese, 2x tomato")
 print(parsed_ingredient)
+
+#___________________________________________________________________________________________________
+# Use a pipeline as a high-level helper
+from transformers import pipeline
+
+pipe = pipeline("token-classification", model="chambliss/distilbert-for-food-extraction")
+# Load model directly
+from transformers import AutoTokenizer, AutoModelForTokenClassification
+
+tokenizer = AutoTokenizer.from_pretrained("chambliss/distilbert-for-food-extraction")
+model = AutoModelForTokenClassification.from_pretrained("chambliss/distilbert-for-food-extraction")
+
+# Example text
+text = "I want a recipe with cheese and tomato."
+
+# Tokenize input text
+inputs = tokenizer(text, return_tensors="pt")
+
+# Make predictions
+outputs = model(**inputs)
+
+# Decode the tokenized input to get the original words
+decoded_tokens = tokenizer.decode(inputs['input_ids'][0])
+
+# Split the decoded tokens to get individual words
+original_words = decoded_tokens.split()
+
+# Get the predicted class labels
+predicted_class_indices = outputs.logits.argmax(-1)[0]
+
+# Create a list to store words with label 0
+parse_ingredient = []
+
+# Iterate over the words and their predicted labels
+for word, label in zip(original_words, predicted_class_indices):
+    if label.item() == 0:  # Check if the label is 0
+        parse_ingredient.append(word)
+
+# Print the words with label 0
+print(parse_ingredient)
 
 #___________________________________________________________________________________________________
 import json

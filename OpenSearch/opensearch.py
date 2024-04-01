@@ -2,7 +2,8 @@ from typing import Tuple
 import OpenSearch.transformer as tr
 from opensearchpy import OpenSearch
 import pprint as pp
-
+from ingredient_parser import parse_ingredient
+import models.models as models
 
 class OpenSearchEnd:
     def __init__(self):
@@ -173,15 +174,15 @@ class OpenSearchEnd:
         return resp            
     
     def query(self):
-        query = "tomato"
+        query = "gorgonzola"
         query_emb = tr.encode(query)
 
         query_denc = {
            'size': 2,
-           "_source": ["recipeName","prepTimeMinutes","cookTimeMinutes","totalTimeMinutes","difficultyLevel","tools","ingredients"],
+           "_source": ["recipeName","prepTimeMinutes","cookTimeMinutes","totalTimeMinutes","difficultyLevel","tools","ingredients.name"],
             "query": {
                     "knn": {
-                    "ingredients.ingredient_embedding": {
+                    "sentence_embedding": {
                         "vector": query_emb[0].numpy(),
                         "k": 3
                     }
@@ -193,28 +194,41 @@ class OpenSearchEnd:
         pp.pprint(response)
 
     def query_by_ingredient(self):
-        query = "gorgonzola"
-        query_emb = tr.encode(query)
-
+        query = "I wanna a recipe with cheese and tomato"
+        parsed_ingredients = models.get_ing_from_sentence(query)
+    
         query_denc = {
-            'size': 5,
-            "_source": ["recipeName","prepTimeMinutes","cookTimeMinutes","totalTimeMinutes","difficultyLevel","tools","ingredients.name"],
-            "query": {
+                'size': 5,
+                "_source": ["recipeName", "prepTimeMinutes", "cookTimeMinutes", "totalTimeMinutes", "difficultyLevel",
+                            "tools", "ingredients.name"],
+                "query": {
+                    "bool": {
+                        "must": []
+                    }
+                }
+            }
+
+            # Iterate over each parsed ingredient and add a KNN field for it
+        for ingredient in parsed_ingredients:
+            # Create a new KNN field for the ingredient
+            print(ingredient)
+            knn_field = {
                 "nested": {
                     "path": "ingredients",
                     "query": {
                         "knn": {
                             "ingredients.ingredient_embedding": {
-                                "vector": query_emb[0].numpy(),
+                                "vector": tr.encode(ingredient)[0].numpy(),  # Assuming ingredient has an embedding attribute
                                 "k": 3
                             }
                         }
                     }
-                
                 }
             }
-           
-        }
+            # Add the KNN field to the "must" list in the query
+            query_denc["query"]["bool"]["must"].append(knn_field)
+
+        # Perform the Elasticsearch search
         response = self.client.search(index=self.index_name, body=query_denc)
         print('\nSearch Result:')
         pp.pprint(response)
