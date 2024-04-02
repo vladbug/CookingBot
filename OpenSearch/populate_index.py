@@ -105,11 +105,17 @@ def populate_index(data):
         recipe_sample = prepare_recipe_sample(data, index)
         recipe_id = str(index)
         #ingredients embedding text
-        ing_text = [ing["ingredient"] for ing in data[recipe_id]["ingredients"]]
+        ing_text = ""
+        if save_flags["Defs/ingredient_embedding"] or save_flags["Defs/sentence_embedding"]:
+            ing_text = [ing["ingredient"] for ing in data[recipe_id]["ingredients"]]
         #title ingredients embedding text
-        title_ing_text = recipe_sample["recipeName"] + " " + " ".join(ing_text)
+        title_ing_text = ""
+        if save_flags["Defs/sentence_embedding"]:
+            title_ing_text = recipe_sample["recipeName"] + " " + " ".join(ing_text)
         #tools embedding text
-        tools_text = get_tools_text(data[recipe_id])
+        tools_text = ""
+        if save_flags["Defs/tools_embedding"]:
+            tools_text = get_tools_text(data[recipe_id])
 
         embeddings_text = [title_ing_text, ing_text, tools_text]
         

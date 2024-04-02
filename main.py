@@ -13,11 +13,11 @@ data = load_json()
 OpenSearchUtil.opensearch_end.disconnect()
 OpenSearchUtil.opensearch_end.connect()
 # TODO NAO CORRER ESTAS TRES LINHAS
-OpenSearchUtil.opensearch_end.delete_index()
-OpenSearchUtil.opensearch_end.create_index()
-populateIndex.populate_index(data=data)
-time.sleep(2)
-OpenSearchUtil.opensearch_end.query()
+# OpenSearchUtil.opensearch_end.delete_index()
+# OpenSearchUtil.opensearch_end.create_index()
+#populateIndex.populate_index(data=data)
+#time.sleep(2)
+OpenSearchUtil.opensearch_end.query_by_ingredient()
 #queries.search_by_total_time(OpenSearchUtil.opensearch_end.client, OpenSearchUtil.opensearch_end.index_name, 10)
 
 
