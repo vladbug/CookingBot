@@ -127,6 +127,19 @@ class OpenSearchEnd:
                             "m":48
                         }
                         }
+                    },
+                    "tools_embedding":{
+                        "type":"knn_vector",
+                        "dimension": 768,
+                        "method":{
+                        "name":"hnsw",
+                        "space_type":"innerproduct",
+                        "engine":"faiss",
+                        "parameters":{
+                            "ef_construction":256,
+                            "m":48
+                        }
+                        }
                     }
                 }
             }
@@ -174,7 +187,7 @@ class OpenSearchEnd:
         return resp            
     
     def query(self):
-        query = "gorgonzola"
+        query = "I wanna a recipe with cheese and tomato"
         query_emb = tr.encode(query)
 
         query_denc = {
