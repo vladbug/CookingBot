@@ -12,6 +12,7 @@ class QueryManager():
 
     
     #region Opensearch Text Queries
+        
     def search_by_total_time(self, max_time: int, num_results=10):
         total_time_query = {
             'size': num_results,
@@ -51,15 +52,38 @@ class QueryManager():
         
         print('\nSearch results:')
         pp.pprint(response)
-        #endregion
+    
+    def search_by_difficulty(self, query : str, num_results = 1):
+    
+        difficulty_query = {
+            'size': num_results,
+            "_source": ["recipeName","totalTimeMinutes","difficultyLevel"],
+            'query' : {
+                'multi_match' : {
+                    'query': query,
+                    'fields': ['difficultyLevel']
+                }
+            }
+        }
+        
+        response = self.client.search(
+            body=difficulty_query,
+            index=self.index_name
+        )
+        
+        print('\nSearch results:')
+        pp.pprint(response)
+
+    #endregion
     
     #region Opensearch Embedding Queries
-    def text_query(self, query : str):
+        
+    def text_query(self, query : str, num_results = 1):
         query_emb = tr.encode(query)
         embedding = query_emb[0].numpy()
         query_denc = {
-           'size': 10,
-           "_source": ["ingredients.name", "recipeName", "tools"],
+           'size': num_results,
+           "_source": ["ingredients.name", "recipeName", "tools", "recipe_json"],
             "query": {
                "nested": {
                     "path": "steps_embedding",
@@ -78,11 +102,11 @@ class QueryManager():
         print('\nSearch Result:')
         pp.pprint(response)
     
-    def query_by_ingredient(self, query : str):
+    def query_by_ingredient(self, query : str, num_results = 1):
         parsed_ingredients = models.get_ing_from_sentence(query)
     
         query_denc = {
-                'size': 5,
+                'size': num_results,
                 "_source": ["recipeName", "prepTimeMinutes", "cookTimeMinutes", "totalTimeMinutes", "difficultyLevel",
                             "tools", "ingredients.name"],
                 "query": {

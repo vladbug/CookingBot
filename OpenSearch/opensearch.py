@@ -47,6 +47,10 @@ class OpenSearchEnd:
             "mappings":{
                 "dynamic":"strict",
                 "properties":{
+                    "recipe_json":{
+                        "type":"object",
+                        "enabled": "false"
+                    },
                     "recipeName":{ #name of the recipe
                         "type":"text"
                     },
@@ -137,19 +141,6 @@ class OpenSearchEnd:
                         "similarity":"BM25"
                     },
                     "sentence_embedding":{
-                        "type":"knn_vector",
-                        "dimension": 768,
-                        "method":{
-                        "name":"hnsw",
-                        "space_type":"innerproduct",
-                        "engine":"faiss",
-                        "parameters":{
-                            "ef_construction":256,
-                            "m":48
-                        }
-                        }
-                    },
-                    "tools_embedding":{
                         "type":"knn_vector",
                         "dimension": 768,
                         "method":{

@@ -17,10 +17,10 @@ client = client_info[0]
 index_name = client_info[1]
 query_manager = query_manager.QueryManager(client,index_name)
 # TODO NAO CORRER ESTAS TRES LINHAS
-# OpenSearchUtil.opensearch_end.delete_index()
-# OpenSearchUtil.opensearch_end.create_index()
+#OpenSearchUtil.opensearch_end.delete_index()
+#OpenSearchUtil.opensearch_end.create_index()
 #populateIndex.populate_index(data=data)
 #time.sleep(2)
 #t_queries.search_ingredients_bool(client,index_name,"")
-query_manager.text_query("I want a recipe using Blender")
+query_manager.text_query("I to eat a great pizza!")
 #query_manager.search_by_course("breakfast")

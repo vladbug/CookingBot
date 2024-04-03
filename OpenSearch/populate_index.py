@@ -10,7 +10,7 @@ from ingredient_parser import parse_ingredient
 from deep_translator import GoogleTranslator
 
 
-embedding_files = ["Defs/sentence_embedding", "Defs/ingredient_embedding", "Defs/tools_embedding",
+embedding_files = ["Defs/sentence_embedding", "Defs/ingredient_embedding",
                    "Defs/steps_embedding"]
 
 def read_embedding_file(file_name):
@@ -51,16 +51,7 @@ def complete_ingredient(recipe):
             ingredient = parse_ingredient(ingredient)["name"]
             ing["ingredient"] = ingredient
 
-def get_tools_text(recipe):
-    tools = recipe["tools"]
-    tools_text = ""
-    if tools == []:
-        return tools_text
-    for tool in tools:
-        tools_text += tool["displayName"] + " "
-    return tools_text
-
-def get_steps_text_incremental(recipe):
+def get_steps_text(recipe):
     instructions = recipe["instructions"]
     incremental_steps = []
     #cumulative_text = recipe["displayName"]
@@ -85,6 +76,7 @@ def get_embedding_files():
 def prepare_recipe_sample(data, index):
     recipe_sample = {}
     recipe_id = str(index)
+    recipe_sample["recipe_json"] = data[recipe_id]
     recipe_sample["recipeName"] = data[recipe_id]["displayName"]
     recipe_sample["prepTimeMinutes"] = data[recipe_id]["prepTimeMinutes"]
     recipe_sample["cookTimeMinutes"] = data[recipe_id]["cookTimeMinutes"]
@@ -129,15 +121,11 @@ def populate_index(data):
         title_ing_text = ""
         if save_flags["Defs/sentence_embedding"]:
             title_ing_text = recipe_sample["recipeName"] + " " + " ".join(ing_text)
-        #tools embedding text
-        tools_text = ""
-        if save_flags["Defs/tools_embedding"]:
-            tools_text = get_tools_text(data[recipe_id])
-        incremental_steps_text = ""
+        steps_text = ""
         if save_flags["Defs/steps_embedding"]:
-            incremental_steps_text = get_steps_text_incremental(data[recipe_id])
+            steps_text = get_steps_text(data[recipe_id])
 
-        embeddings_text = [title_ing_text, ing_text, tools_text, incremental_steps_text]
+        embeddings_text = [title_ing_text,ing_text,steps_text]
         
         recipe_sample = process_embedding(embeddings_text, embeddings, save_flags, data[recipe_id], recipe_sample, index)
 
