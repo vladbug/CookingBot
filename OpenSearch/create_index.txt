@@ -1,3 +1,5 @@
+"""UNUSED CLASS"""
+
 from typing import Tuple
 import OpenSearch.transformer as tr
 from opensearchpy import OpenSearch

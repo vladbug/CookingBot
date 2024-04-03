@@ -27,7 +27,7 @@ class OpenSearchEnd:
     def connect(self):
         if self.client.indices.exists(self.index_name):
             self.client.indices.open(index = self.index_name)
-        return self.client
+        return self.client, self.index_name
 
     def disconnect(self):
         if self.client is None:
