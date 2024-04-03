@@ -65,6 +65,9 @@ class OpenSearchEnd:
                     "images":{ #Array of image urls, [str]
                         "type" : "text"  
                     },
+                    "servings":{
+                        "type":"float"
+                    },
                     "videos": { #Array of object type videos, that contains a title and url
                         "type": "nested",
                         "properties": {
@@ -140,6 +143,19 @@ class OpenSearchEnd:
                             "m":48
                         }
                         }
+                    },
+                    "description_embedding":{
+                        "type":"knn_vector",
+                        "dimension": 768,
+                        "method":{
+                        "name":"hnsw",
+                        "space_type":"innerproduct",
+                        "engine":"faiss",
+                        "parameters":{
+                            "ef_construction":256,
+                            "m":48
+                        }
+                        }
                     }
                 }
             }
@@ -186,64 +202,5 @@ class OpenSearchEnd:
         resp = self.client.index(index=self.index_name, id=id, body=recipe)
         return resp            
     
-    def query(self):
-        query = "I wanna a recipe with cheese and tomato"
-        query_emb = tr.encode(query)
-
-        query_denc = {
-           'size': 2,
-           "_source": ["recipeName","prepTimeMinutes","cookTimeMinutes","totalTimeMinutes","difficultyLevel","tools","ingredients.name"],
-            "query": {
-                    "knn": {
-                    "sentence_embedding": {
-                        "vector": query_emb[0].numpy(),
-                        "k": 3
-                    }
-                    }
-            }
-        }
-        response = self.client.search(index=self.index_name, body=query_denc)
-        print('\nSearch Result:')
-        pp.pprint(response)
-
-    def query_by_ingredient(self):
-        query = "I wanna a recipe with cheese and tomato"
-        parsed_ingredients = models.get_ing_from_sentence(query)
-    
-        query_denc = {
-                'size': 5,
-                "_source": ["recipeName", "prepTimeMinutes", "cookTimeMinutes", "totalTimeMinutes", "difficultyLevel",
-                            "tools", "ingredients.name"],
-                "query": {
-                    "bool": {
-                        "must": []
-                    }
-                }
-            }
-
-            # Iterate over each parsed ingredient and add a KNN field for it
-        for ingredient in parsed_ingredients:
-            # Create a new KNN field for the ingredient
-            print(ingredient)
-            knn_field = {
-                "nested": {
-                    "path": "ingredients",
-                    "query": {
-                        "knn": {
-                            "ingredients.ingredient_embedding": {
-                                "vector": tr.encode(ingredient)[0].numpy(),  # Assuming ingredient has an embedding attribute
-                                "k": 3
-                            }
-                        }
-                    }
-                }
-            }
-            # Add the KNN field to the "must" list in the query
-            query_denc["query"]["bool"]["must"].append(knn_field)
-
-        # Perform the Elasticsearch search
-        response = self.client.search(index=self.index_name, body=query_denc)
-        print('\nSearch Result:')
-        pp.pprint(response)
 
 opensearch_end = OpenSearchEnd() 

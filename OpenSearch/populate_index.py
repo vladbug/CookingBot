@@ -10,7 +10,8 @@ from ingredient_parser import parse_ingredient
 from deep_translator import GoogleTranslator
 
 
-embedding_files = ["Defs/sentence_embedding", "Defs/ingredient_embedding", "Defs/tools_embedding"]
+embedding_files = ["Defs/sentence_embedding", "Defs/ingredient_embedding", "Defs/tools_embedding",
+                   "Defs/description_embedding"]
 
 def read_embedding_file(file_name):
     # Check if recipe_emb_file exists
@@ -52,8 +53,13 @@ def get_tools_text(recipe):
         tools_text += tool["displayName"] + " "
     return tools_text
 
+def get_steps_text(recipe):
+    instructions = recipe["instructions"]
+    instructions_text = ""
+    for instruction in instructions:
+        instructions_text += instruction["stepText"] + " "
+    return instructions_text
 
-        
 def get_embedding_files():
     embeddings = {}
     save_flags = {}
@@ -81,10 +87,10 @@ def prepare_recipe_sample(data, index):
     recipe_sample["cuisines"] = data[recipe_id]["cuisines"]
     recipe_sample["courses"] = data[recipe_id]["courses"]
     recipe_sample["diets"] = data[recipe_id]["diets"]
+    recipe_sample["servings"] = data[recipe_id]["servings"]
     return recipe_sample
 
-def process_embedding(embedding_text, embeddings, save_flags, embedding_files, recipe, index):
-    recipe_sample = {}
+def process_embedding(embedding_text, embeddings, save_flags, recipe,recipe_sample, index):
     for file_name, embedding_text in zip(embedding_files, embedding_text):
         if save_flags[file_name]:
             embedding = tr.encode(embedding_text)
@@ -116,10 +122,13 @@ def populate_index(data):
         tools_text = ""
         if save_flags["Defs/tools_embedding"]:
             tools_text = get_tools_text(data[recipe_id])
+        steps_text = ""
+        if save_flags["Defs/description_embedding"]:
+            steps_text = data[recipe_id]["displayName"] +" " +get_steps_text(data[recipe_id])
 
         embeddings_text = [title_ing_text, ing_text, tools_text]
         
-        recipe_sample = process_embedding(embeddings_text, embeddings, save_flags, embedding_files, data[recipe_id], index)
+        recipe_sample = process_embedding(embeddings_text, embeddings, save_flags, data[recipe_id], recipe_sample, index)
 
         res = OpenSearchUtil.opensearch_end.add_recipe(index, recipe_sample)
         pp.pprint(res)
