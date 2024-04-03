@@ -11,7 +11,7 @@ from deep_translator import GoogleTranslator
 
 
 embedding_files = ["Defs/sentence_embedding", "Defs/ingredient_embedding", "Defs/tools_embedding",
-                   "Defs/description_embedding"]
+                   "Defs/steps_embedding"]
 
 def read_embedding_file(file_name):
     # Check if recipe_emb_file exists
@@ -34,6 +34,13 @@ def format_ingredients(embedding,recipe):
                         "ingredient_embedding":embedding[idx].numpy()})
     return ing_obj
 
+def format_steps(embedding,recipe):
+    steps = recipe["instructions"]
+    steps_obj = []
+    for idx, step in enumerate(steps):
+        steps_obj.append({"step_embedding":embedding[idx].numpy()})
+    return steps_obj
+
 # deprecated - done in test.py
 def complete_ingredient(recipe):
     translator = GoogleTranslator(source='auto', target='en')
@@ -53,12 +60,14 @@ def get_tools_text(recipe):
         tools_text += tool["displayName"] + " "
     return tools_text
 
-def get_steps_text(recipe):
+def get_steps_text_incremental(recipe):
     instructions = recipe["instructions"]
-    instructions_text = ""
+    incremental_steps = []
+    #cumulative_text = recipe["displayName"]
     for instruction in instructions:
-        instructions_text += instruction["stepText"] + " "
-    return instructions_text
+        cumulative_text = recipe["displayName"]+" " + instruction["stepText"]
+        incremental_steps.append(cumulative_text)
+    return incremental_steps
 
 def get_embedding_files():
     embeddings = {}
@@ -100,6 +109,8 @@ def process_embedding(embedding_text, embeddings, save_flags, recipe,recipe_samp
         index_field = file_name.split("/")[-1]
         if index_field == "ingredient_embedding":
             recipe_sample["ingredients"] = format_ingredients(embedding, recipe)
+        elif index_field == "steps_embedding":
+            recipe_sample[index_field] = format_steps(embedding, recipe)
         else:
             recipe_sample[index_field] = embedding[0].numpy()
     return recipe_sample
@@ -122,11 +133,11 @@ def populate_index(data):
         tools_text = ""
         if save_flags["Defs/tools_embedding"]:
             tools_text = get_tools_text(data[recipe_id])
-        steps_text = ""
-        if save_flags["Defs/description_embedding"]:
-            steps_text = data[recipe_id]["displayName"] +" " +get_steps_text(data[recipe_id])
+        incremental_steps_text = ""
+        if save_flags["Defs/steps_embedding"]:
+            incremental_steps_text = get_steps_text_incremental(data[recipe_id])
 
-        embeddings_text = [title_ing_text, ing_text, tools_text]
+        embeddings_text = [title_ing_text, ing_text, tools_text, incremental_steps_text]
         
         recipe_sample = process_embedding(embeddings_text, embeddings, save_flags, data[recipe_id], recipe_sample, index)
 

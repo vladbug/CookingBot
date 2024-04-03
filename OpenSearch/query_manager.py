@@ -59,12 +59,17 @@ class QueryManager():
         embedding = query_emb[0].numpy()
         query_denc = {
            'size': 10,
-           "_source": ["recipeName","prepTimeMinutes","cookTimeMinutes","totalTimeMinutes","difficultyLevel","tools","ingredients.name"],
+           "_source": ["ingredients.name", "recipeName", "tools"],
             "query": {
-               "knn": {
-                    "description_embedding": {
-                        "vector": embedding,
-                        "k": 3
+               "nested": {
+                    "path": "steps_embedding",
+                    "query": {
+                        "knn": {
+                            "steps_embedding.step_embedding": {
+                                "vector":embedding, 
+                                "k": 3
+                            }
+                        }
                     }
                 }
             }
@@ -97,7 +102,7 @@ class QueryManager():
                     "query": {
                         "knn": {
                             "ingredients.ingredient_embedding": {
-                                "vector": tr.encode(ingredient)[0].numpy(),  # Assuming ingredient has an embedding attribute
+                                "vector": tr.encode(ingredient)[0].numpy(),
                                 "k": 3
                             }
                         }

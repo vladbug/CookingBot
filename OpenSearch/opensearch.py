@@ -112,6 +112,24 @@ class OpenSearchEnd:
                             }
                         }
                     },
+                    "steps_embedding":{
+                        "type":"nested",
+                        "properties": {
+                            "step_embedding":{
+                                "type":"knn_vector",
+                                "dimension": 768,
+                                "method":{
+                                "name":"hnsw",
+                                "space_type":"innerproduct",
+                                "engine":"faiss",
+                                "parameters":{
+                                    "ef_construction":256,
+                                    "m":48
+                                }
+                                }
+                            }
+                        }
+                    },
                     "contents":{ 
                         "type":"text",
                         "analyzer": "standard",
@@ -132,19 +150,6 @@ class OpenSearchEnd:
                         }
                     },
                     "tools_embedding":{
-                        "type":"knn_vector",
-                        "dimension": 768,
-                        "method":{
-                        "name":"hnsw",
-                        "space_type":"innerproduct",
-                        "engine":"faiss",
-                        "parameters":{
-                            "ef_construction":256,
-                            "m":48
-                        }
-                        }
-                    },
-                    "description_embedding":{
                         "type":"knn_vector",
                         "dimension": 768,
                         "method":{
