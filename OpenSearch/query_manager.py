@@ -2,15 +2,14 @@ import pprint as pp
 from typing import List, Union
 import models.models as models
 import OpenSearch.transformer as tr
+from opensearchpy import OpenSearch
 
 class QueryManager():
     
-    def __init__(self,client,index_name):
+    def __init__(self,client : OpenSearch,index_name : str):
         self.client = client
         self.index_name = index_name
         
-
-    
     #region Opensearch Text Queries
         
     def search_by_total_time(self, max_time: int, num_results=10):
@@ -32,8 +31,33 @@ class QueryManager():
         print('\nSearch results:')
         pp.pprint(response)
 
-    def search_by_course(self, query : str, num_results = 1):
     
+    #Search by a given difficulty, easy, medium, hard
+    def search_by_difficulty(self, difficulty_query : str, num_results = 1):
+        query_body = {
+            'size': 4,
+            "_source": ["recipeName","totalTimeMinutes","difficultyLevel"],
+            'query' : {
+                'multi_match' : {
+                    'query': difficulty_query,
+                    'fields': ['difficultyLevel']
+                }
+            }
+        }
+        
+        pp.pprint(query_body)
+        response = self.client.search(
+            body=query_body,
+            index=self.index_name,
+            timeout=50
+        )
+        
+        print('\nSearch results:')
+        pp.pprint(response)
+
+    #Search by a given course, main, dessert, breakfast etc...
+    def search_by_course(self, query : str, num_results = 1):
+        
         difficulty_query = {
             'size': num_results,
             "_source": ["recipeName","totalTimeMinutes","courses"],
@@ -74,6 +98,80 @@ class QueryManager():
         print('\nSearch results:')
         pp.pprint(response)
 
+    
+    def search_by_total_time(self, max_time: int, num_results=10):
+        total_time_query = {
+            'size': num_results,
+            "_source": ["recipeName", "totalTimeMinutes", "difficultyLevel"],
+            'query': {
+                'range': {
+                    'totalTimeMinutes': {'lte': max_time}
+                }
+            }
+        }
+
+        response = self.client.search(
+            body=total_time_query,
+            index=self.index_name
+        )
+
+        print('\nSearch results:')
+        pp.pprint(response)
+    
+    def search_ingredients_bool(self, ingredients_included : List[str], ingredients_excluded : List[str], num_results = 5):
+        
+        query_body = {
+            'size' : num_results,
+            '_source' : ["recipeName","totalTimeMinutes","courses","ingredients"],
+            "query": {
+                "bool": {
+                    "must": [{
+                        'terms' : {
+                            'ingredients.name' : ingredients_included
+                        }
+                    }],
+                    "must_not": [{
+                        'terms' : {
+                            'ingredients' : ingredients_excluded
+                        }
+                    }]
+                }
+            }
+        }
+    
+        response = self.client.search(
+            body=query_body,
+            index=self.index_name,            
+        )
+    
+        print('\nSearch results:')
+        pp.pprint(response)
+    
+    
+    #Search by a given number of servings, can be exact or up to the given number
+    def search_by_servings(self, nr_servings, exact = True, num_results = 1):
+        
+        if(exact):
+            query_body = {
+                'size' : num_results,
+                '_source' : ["recipeName","servings","ingredients"],
+                'query': {
+                    'multi_match' : {
+                        'query' : nr_servings,
+                        'fields' : ["servings"]
+                    }
+                }
+            }
+        else:
+            query_body = {
+            'size': num_results,
+            "_source": ["recipeName", "totalTimeMinutes", "difficultyLevel"],
+            'query': {
+                'range': {
+                    'fields': {'lte': nr_servings}
+                }
+            }
+        }
     #endregion
     
     #region Opensearch Embedding Queries
@@ -141,8 +239,3 @@ class QueryManager():
         print('\nSearch Result:')
         pp.pprint(response)
     #endregion 
-    
-    
-
-        
-

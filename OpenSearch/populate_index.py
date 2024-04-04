@@ -5,7 +5,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 import os
 import pickle
 import nltk
-nltk.download('averaged_perceptron_tagger')
+# nltk.download('averaged_perceptron_tagger')
 from ingredient_parser import parse_ingredient
 from deep_translator import GoogleTranslator
 

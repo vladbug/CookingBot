@@ -1,5 +1,6 @@
 from typing import Tuple
 import OpenSearch.transformer as tr
+import opensearchpy
 from opensearchpy import OpenSearch
 import pprint as pp
 from ingredient_parser import parse_ingredient
@@ -24,10 +25,10 @@ class OpenSearchEnd:
             ssl_show_warn = False
             )
     
-    def connect(self):
+    def connect(self) -> Tuple[OpenSearch,str]:
         if self.client.indices.exists(self.index_name):
             self.client.indices.open(index = self.index_name)
-        return self.client, self.index_name
+        return (self.client, self.index_name)
 
     def disconnect(self):
         if self.client is None:
