@@ -20,6 +20,4 @@ query_manager = query_manager.QueryManager(client,index_name)
 #OpenSearchUtil.opensearch_end.delete_index()
 #OpenSearchUtil.opensearch_end.create_index()
 #populateIndex.populate_index(data=data)
-
-query_manager = query_manager.QueryManager(client,index_name)
-query_manager.search_by_difficulty("easy",10)
+query_manager.query_by_ingredient("I wanna a recipe with cheese and chicken")

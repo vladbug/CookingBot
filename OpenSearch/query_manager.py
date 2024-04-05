@@ -12,7 +12,7 @@ class QueryManager():
         
     #region Opensearch Text Queries
         
-    def search_by_total_time(self, max_time: int, num_results=10):
+    def search_by_total_time(self, max_time: int, num_results=1):
         total_time_query = {
             'size': num_results,
             "_source": ["recipeName", "totalTimeMinutes", "difficultyLevel"],
@@ -35,7 +35,7 @@ class QueryManager():
     #Search by a given difficulty, easy, medium, hard
     def search_by_difficulty(self, difficulty_query : str, num_results = 1):
         query_body = {
-            'size': 4,
+            'size': num_results,
             "_source": ["recipeName","totalTimeMinutes","difficultyLevel"],
             'query' : {
                 'multi_match' : {
@@ -77,46 +77,6 @@ class QueryManager():
         print('\nSearch results:')
         pp.pprint(response)
     
-    def search_by_difficulty(self, query : str, num_results = 1):
-    
-        difficulty_query = {
-            'size': num_results,
-            "_source": ["recipeName","totalTimeMinutes","difficultyLevel"],
-            'query' : {
-                'multi_match' : {
-                    'query': query,
-                    'fields': ['difficultyLevel']
-                }
-            }
-        }
-        
-        response = self.client.search(
-            body=difficulty_query,
-            index=self.index_name
-        )
-        
-        print('\nSearch results:')
-        pp.pprint(response)
-
-    
-    def search_by_total_time(self, max_time: int, num_results=10):
-        total_time_query = {
-            'size': num_results,
-            "_source": ["recipeName", "totalTimeMinutes", "difficultyLevel"],
-            'query': {
-                'range': {
-                    'totalTimeMinutes': {'lte': max_time}
-                }
-            }
-        }
-
-        response = self.client.search(
-            body=total_time_query,
-            index=self.index_name
-        )
-
-        print('\nSearch results:')
-        pp.pprint(response)
     
     def search_ingredients_bool(self, ingredients_included : List[str], ingredients_excluded : List[str], num_results = 5):
         
@@ -132,7 +92,7 @@ class QueryManager():
                     }],
                     "must_not": [{
                         'terms' : {
-                            'ingredients' : ingredients_excluded
+                            'ingredients.name' : ingredients_excluded
                         }
                     }]
                 }
@@ -181,7 +141,7 @@ class QueryManager():
         embedding = query_emb[0].numpy()
         query_denc = {
            'size': num_results,
-           "_source": ["ingredients.name", "recipeName", "tools", "recipe_json"],
+           "_source": ["ingredients.name", "recipeName", "tools"],
             "query": {
                "nested": {
                     "path": "steps_embedding",
