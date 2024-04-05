@@ -5,6 +5,7 @@
 \documentclass[runningheads]{llncs}
 %
 \usepackage{graphicx}
+\usepackage{amsmath}
 % Used for displaying a sample figure. If possible, figure files should
 % be included in EPS format.
 %
@@ -14,7 +15,7 @@
 
 \begin{document}
 %
-\title{MPDW - ChatBot}
+\title{Conversational Task Agent}
 %
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
@@ -33,16 +34,64 @@ Vladyslav Mikytiv\inst{1}\orcidID{60735}}
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-The abstract should briefly summarize the contents of the paper in
-15--250 words.
+Our project focuses on creating an adaptive taskbot tailored specifically for guiding users through cooking tasks. This taskbot will utilize artificial intelligence and natural language processing to interact with users, understanding their progress and constraints in real-time. Whether it's baking a birthday cake or preparing a gourmet meal, the taskbot will dynamically adjust instructions based on the ingredients and cooking tools available to the user. In instances where users encounter obstacles, such as running out of ingredients or lacking specific utensils, the taskbot will intelligently adapt the recipe, offering alternative ingredient substitutions or equipment alternatives to ensure successful completion of the dish. By providing personalised guidance that accommodates diverse cooking scenarios, our taskbot aims to enhance the culinary experience, empowering users to overcome challenges and achieve culinary success with confidence. 
 
-\keywords{First keyword  \and Second keyword \and Another keyword.}
+\keywords{Taskbot  \and Word embedding \and Natural Language Processing}
 \end{abstract}
 %
 %
 %
-\section{First Section}
-\subsection{A Subsection Sample}
+\section{Introduction}
+In recent years, word embedding has emerged as a cornerstone technology in the field of artificial intelligence, revolutionising natural language processing (NLP) tasks. This transformative approach to representing words as dense vectors in continuous vector spaces has garnered significant attention and acclaim within the AI community. The rise of word embedding has been marked by its progression from conventional methods to the creation of sophisticated models capable of capturing intricate semantic connections among words.
+
+The inception of word embedding can be traced back to the early 2000s when researchers began exploring methods to overcome the limitations of traditional vector space models, such as bag-of-words and one-hot encoding. These initial efforts paved the way for more advanced approaches that would later reshape the field of natural language processing (NLP).
+
+However, it wasn't until the introduction of groundbreaking techniques like Word2Vec by Mikolov et al. in 2013 and GloVe (Global Vectors for Word Representation) by Pennington et al. in 2014 that word embedding started to gain widespread attention and adoption. These models introduced novel methodologies for learning distributed representations of words based on large corpora of text, capturing intricate semantic nuances and relationships.
+
+The allure of word embedding lies in its ability to encode semantic meaning into dense vector representations, enabling machines to understand language in a more nuanced and contextually rich manner.
+
+The project aims to utilize embedding algorithms and large language models to develop a dialog manager between users and the taskbot. This manager will execute user requests and guide them through processes, particularly in cooking recipes, with adaptability. Leveraging a dataset containing recipes data, including ingredients, procedural steps, and difficulty levels, we utilize OpenSearch indexing to efficiently retrieve information for user queries.
+
+
+\section{Algorithms and Implementation}
+\subsection{Search and Indexing}
+We must implement a search index of complex manual tasks in order to allow our system to retrieve relevant information about the tasks.
+
+\begin{figure}[htbp]
+    \center
+    \includegraphics[scale=0.15]{images/task_retriever.jpg}
+    \caption{After dependencies removal}
+\end{figure}
+
+We must parse the data from the dataset which is a JSON file. We do that while we populate our indexes in OpenSearch. For each recipe we parse the JSON and send the relevant informations to the index mapping that was created. We introduce a set of mappings tailored to effectively index recipe data and they are the following:
+\begin{table}[htbp]
+\centering
+\setlength{\abovecaptionskip}{10pt} % Adjust the spacing here
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Field} & \textbf{Data Type} \\ \hline
+recipeJson & object \\ \hline
+recipeName & text \\ \hline
+prepTimeMinutes & integer \\ \hline
+cookTimeMinutes & integer \\ \hline
+totalTimeMinutes & integer \\ \hline
+difficultyLevel & keyword \\ \hline
+images & array of text \\ \hline
+servings & float \\ \hline
+videos & array of object \\ \hline
+tools & array of text \\ \hline
+cuisines & array of text \\ \hline
+courses & array of text \\ \hline
+diets & array of text \\ \hline
+stepsEmbedding & \text{knn\_vector} \\ \hline
+sentenceEmbedding & \text{knn\_vector} \\ \hline
+\end{tabular}
+\caption{Mappings for Indexing Recipe Data}
+\label{tab:mappings}
+\end{table}
+
+\section{Evaluation}
+\subsection{Dataset Description}
 Please note that the first paragraph of a section or subsection is
 not indented. The first paragraph that follows a table, figure,
 equation etc. does not need an indent, either.
