@@ -59,7 +59,7 @@ The project aims to utilize embedding algorithms and large language models to de
 
 
 \section{Algorithms and Implementation}
-\subsection{Search and Indexing}
+\subsection{Indexing}
 We must implement a search index of complex manual tasks in order to allow our system to retrieve relevant information about the tasks.
 
 \begin{figure}[!htbp]
@@ -74,7 +74,7 @@ We must parse the data from the dataset which is a JSON file. We do that while w
 \begin{table}[ht]
 \centering
 \setlength{\abovecaptionskip}{10pt} % Adjust the spacing here
-\resizebox{0.8\textwidth}{!}{%
+\resizebox{0.7\textwidth}{!}{%
 \begin{subtable}{0.45\linewidth}
 \centering
 \begin{tabular}{|c|c|}
@@ -112,6 +112,42 @@ sentenceEmbedding & knn\_vector \\ \hline
 \end{table}
 
 An important detail to emphasise is that our \textbf{ingredients} are a \textbf{nested type} with the properties \textbf{name} and most importantly the
-corresponding \textbf{\text{ingredient\_embedding}}.
+corresponding \textbf{\text{ingredient\_embedding}}. We also used the mpnet-base-v2 transformer because it had better results.~\cite{mpnet}.
+
+\subsection{Searching}
+We've initiated the project by focusing on leveraging indexes for efficient dataset navigation, and OpenSearch emerges as a pivotal tool for executing queries seamlessly.
+
+We've commenced with text-based queries, enabling users to access recipes based on various parameters such as cooking time, difficulty level, course type, or serving size.
+
+Moreover, the integration of boolean queries adds another layer of flexibility, empowering users to refine their searches by specifying ingredients they desire or wish to avoid in their recipes.
+
+Embedded queries stand out as particularly intriguing among our query types. By transforming user inputs into vector representations, we can uncover recipes closely related to the query. This method offers personalised recipe recommendations that align with users' interests more effectively.
+
+In our index mappings, we utilize various embeddings to facilitate our searches. A crucial component is a model, referenced as~\cite{bert}, which extracts relevant information from natural language phrases, particularly focusing on ingredient extraction from user queries. This model also aids in processing the textual content within recipe steps.
+
+Recognising the importance of recipe steps, we've implemented embeddings for each recipe name and its associated steps. This approach enables our search system to capture the essence of each recipe efficiently, ensuring accurate query results.
+
+After thorough testing, we've identified the most effective embeddings for our system: ingredient embeddings for individual ingredients and step embeddings paired with respective recipe names. Despite transformer limitations, these embeddings show promising results, especially in user-input based embedded queries. Given that our system doesn't prioritize contextual nuances in phrases, we've opted to utilize FoodBERT~\cite{bert} to maintain consistency with this approach.
+
+In essence, our framework enables a dynamic exploration of the dataset, granting users the ability to refine their searches precisely according to their preferences and specific requirements.
+
+\section{Evaluation}
+\subsection{Dataset Description}
+The dataset contains a significant amount of recipe information, but not all of it is pertinent to our objectives. After careful examination, we have identified the essential data required for generating meaningful embeddings and providing accurate search results to users. Our focus has been on excluding irrelevant information and prioritizing specific details that enhance the user's search experience.
+
+Following a thorough dataset analysis, we selectively filtered the essential data required for crafting our embeddings and information pertinent to users for search results. Our assessment highlighted the necessity for detailed information on certain aspects while deeming others less crucial.
+
+During our process of embedding sentences and experimenting with various techniques, we encountered two significant problems. Firstly, the \textbf{displayText} of each ingredient contained excessive information, including opinions and irrelevant text. Secondly, some \textbf{displayText} entries were in languages other than English (e.g., Italian). This posed challenges, as searching for ingredients like Italian cheese would erroneously suggest a strong relationship due to language inconsistencies.
+
+Therefore, to address these issues, we implemented two solutions. Firstly, we opted to utilize only the \textbf{ingredient} property of each ingredient. To accomplish this, we employed a model that extracts the ingredient from the \textbf{displayText} and populates the ingredient field in the JSON.
+
+For that, we used the \url{https://github.com/strangetom/ingredient-parser}~\cite{ingredientParser} in order to extract the ingredients from a phrase. With this we solved the issue of having \textbf{null} values in these fields. However, the problem persisted with \textbf{textDisplay} being in another language, as the ingredient parser model~\cite{ingredientParser} simply returned the \textbf{displayText} as it was originally.
+
+By utilizing a translator model~\cite{deeptranslate} before feeding the data to the ingredient parser~\cite{ingredientParser}, we successfully translated the \textbf{displayTexts} that were in other languages into English. This allowed us to apply the model to extract the ingredients and populate the missing fields.
+
+These modifications to our original dataset resulted in a more comprehensive dataset. We created a new JSON file containing all of the original information along with the additional data. This file is accessible through OpenSearch, as it is stored without being indexed. Its sole purpose is to be retrievable from OpenSearch.
+
+\bibliographystyle{plain}
+\bibliography{my_bib.bib}
 
 \end{document}
