@@ -82,19 +82,19 @@ class QueryManager():
         
         query_body = {
             'size' : num_results,
-            '_source' : ["recipeName","totalTimeMinutes","courses","ingredients"],
+            '_source' : ["recipeName","totalTimeMinutes","courses","ingredients.name"],
             "query": {
                 "bool": {
                     "must": [{
-                        'terms' : {
-                            'ingredients.name' : ingredients_included
+                        'term' : {
+                            'ingredients.name' : "Tomato"
                         }
                     }],
-                    "must_not": [{
-                        'terms' : {
-                            'ingredients.name' : ingredients_excluded
-                        }
-                    }]
+                    # "must_not": [{
+                    #     'terms' : {
+                    #         'ingredients.name' : [""]
+                    #     }
+                    # }]
                 }
             }
         }
@@ -132,6 +132,14 @@ class QueryManager():
                 }
             }
         }
+            
+        response = self.client.search(
+            body=query_body,
+            index=self.index_name,            
+        )
+    
+        print('\nSearch results:')
+        pp.pprint(response)
     #endregion
     
     #region Opensearch Embedding Queries
