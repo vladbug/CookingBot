@@ -81,23 +81,38 @@ class QueryManager():
     def search_ingredients_bool(self, ingredients_included : List[str], ingredients_excluded : List[str], num_results = 5):
         
         query_body = {
-            'size' : num_results,
-            '_source' : ["recipeName","totalTimeMinutes","courses","ingredients"],
-            "query": {
-                "bool": {
-                    "must": [{
-                        'terms' : {
-                            'ingredients.name' : ingredients_included
-                        }
-                    }],
-                    "must_not": [{
-                        'terms' : {
-                            'ingredients.name' : ingredients_excluded
-                        }
-                    }]
+                'size': num_results,
+                "_source": ["recipeName","totalTimeMinutes","ingredients.name"],
+                "query": {
+                    "bool": {
+                        "must": [],
+                        "must_not": []
+                    }
                 }
             }
-        }
+        for ingredient in ingredients_included:
+            query_body["query"]["bool"]["must"].append({
+                "nested": {
+                    "path": "ingredients",
+                    "query": {
+                        "match": {
+                            "ingredients.name": ingredient
+                        }
+                    }
+                }
+            })
+        for ingredient in ingredients_excluded:
+            query_body["query"]["bool"]["must_not"].append({
+                "nested": {
+                    "path": "ingredients",
+                    "query": {
+                        "match": {
+                            "ingredients.name": ingredient
+                        }
+                    }
+                }
+            })
+
     
         response = self.client.search(
             body=query_body,
@@ -114,7 +129,7 @@ class QueryManager():
         if(exact):
             query_body = {
                 'size' : num_results,
-                '_source' : ["recipeName","servings","ingredients"],
+                '_source' : ["recipeName","servings","ingredients.name"],
                 'query': {
                     'multi_match' : {
                         'query' : nr_servings,

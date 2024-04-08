@@ -29,5 +29,4 @@ def get_ing_from_sentence(text):
         if word != '[CLS]' and word != '[SEP]':
             if label.item() == 0:  # Check if the label is 0
                 parse_ingredient.append(word)
-    print(parse_ingredient)
     return parse_ingredient
