@@ -103,7 +103,6 @@ courses & array of text \\ \hline
 diets & array of text \\ \hline
 ingredients & array of object \\ \hline
 stepsEmbedding & knn\_vector \\ \hline
-sentenceEmbedding & knn\_vector \\ \hline
 \end{tabular}
 \end{subtable}
 }
@@ -125,7 +124,7 @@ Embedded queries stand out as particularly intriguing among our query types. By 
 
 In our index mappings, we utilize various embeddings to facilitate our searches. A crucial component is a model, referenced as~\cite{bert}, which extracts relevant information from natural language phrases, particularly focusing on ingredient extraction from user queries. This model also aids in processing the textual content within recipe steps.
 
-Recognising the importance of recipe steps, we've implemented embeddings for each recipe name and its associated steps. This approach enables our search system to capture the essence of each recipe efficiently, ensuring accurate query results.
+Acknowledging the significance of recipe steps, we've introduced embeddings for both the recipe names and their corresponding individual steps. This approach enables our search system to capture the essence of each recipe efficiently, ensuring accurate query results.
 
 After thorough testing, we've identified the most effective embeddings for our system: ingredient embeddings for individual ingredients and step embeddings paired with respective recipe names. Despite transformer limitations, these embeddings show promising results, especially in user-input based embedded queries. Given that our system doesn't prioritize contextual nuances in phrases, we've opted to utilize FoodBERT~\cite{bert} to maintain consistency with this approach.
 
