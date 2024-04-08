@@ -16,8 +16,8 @@ client_info = OpenSearchUtil.opensearch_end.connect()
 client = client_info[0]
 index_name = client_info[1]
 query_manager = query_manager.QueryManager(client,index_name)
-# TODO NAO CORRER ESTAS TRES LINHAS
-#OpenSearchUtil.opensearch_end.delete_index()
-#OpenSearchUtil.opensearch_end.create_index()
-#populateIndex.populate_index(data=data)
+# OpenSearchUtil.opensearch_end.delete_index()
+# OpenSearchUtil.opensearch_end.create_index()
+# populateIndex.populate_index(data=data)
+# time.sleep(2)
 query_manager.query_by_ingredient("I wanna a recipe with cheese and chicken")

@@ -10,7 +10,7 @@ from ingredient_parser import parse_ingredient
 from deep_translator import GoogleTranslator
 
 
-embedding_files = ["Defs/sentence_embedding", "Defs/ingredient_embedding",
+embedding_files = ["Defs/ingredient_embedding",
                    "Defs/steps_embedding"]
 
 def read_embedding_file(file_name):
@@ -115,17 +115,13 @@ def populate_index(data):
         recipe_id = str(index)
         #ingredients embedding text
         ing_text = ""
-        if save_flags["Defs/ingredient_embedding"] or save_flags["Defs/sentence_embedding"]:
+        if save_flags["Defs/ingredient_embedding"]:
             ing_text = [ing["ingredient"] for ing in data[recipe_id]["ingredients"]]
-        #title ingredients embedding text
-        title_ing_text = ""
-        if save_flags["Defs/sentence_embedding"]:
-            title_ing_text = recipe_sample["recipeName"] + " " + " ".join(ing_text)
         steps_text = ""
         if save_flags["Defs/steps_embedding"]:
             steps_text = get_steps_text(data[recipe_id])
 
-        embeddings_text = [title_ing_text,ing_text,steps_text]
+        embeddings_text = [ing_text,steps_text]
         
         recipe_sample = process_embedding(embeddings_text, embeddings, save_flags, data[recipe_id], recipe_sample, index)
 

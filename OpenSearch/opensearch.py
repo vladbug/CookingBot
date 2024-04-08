@@ -134,25 +134,6 @@ class OpenSearchEnd:
                                 }
                             }
                         }
-                    },
-                    "contents":{ 
-                        "type":"text",
-                        "analyzer": "standard",
-                        #"analyzer":"my_analyzer", we can after add the spell checking here
-                        "similarity":"BM25"
-                    },
-                    "sentence_embedding":{
-                        "type":"knn_vector",
-                        "dimension": 768,
-                        "method":{
-                        "name":"hnsw",
-                        "space_type":"innerproduct",
-                        "engine":"faiss",
-                        "parameters":{
-                            "ef_construction":256,
-                            "m":48
-                        }
-                        }
                     }
                 }
             }
