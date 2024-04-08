@@ -44,6 +44,3 @@ def encode(texts):
     normalized_embeddings = normalized_embeddings.cpu()
     return normalized_embeddings
 
-#Sentences we want to encode for our embedding
-#docs = ["I live in London","I live in the capital of England"] # where we will have the JSON information
-#doc_emb = encode(docs)

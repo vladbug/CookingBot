@@ -117,7 +117,7 @@ class OpenSearchEnd:
                             }
                         }
                     },
-                    "steps_embedding":{
+                    "steps_embedding":{ #Array of step embeddings, [str]
                         "type":"nested",
                         "properties": {
                             "step_embedding":{

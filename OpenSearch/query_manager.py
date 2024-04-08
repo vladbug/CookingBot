@@ -82,19 +82,19 @@ class QueryManager():
         
         query_body = {
             'size' : num_results,
-            '_source' : ["recipeName","totalTimeMinutes","courses","ingredients.name"],
+            '_source' : ["recipeName","totalTimeMinutes","courses","ingredients"],
             "query": {
                 "bool": {
                     "must": [{
-                        'term' : {
-                            'ingredients.name' : "Tomato"
+                        'terms' : {
+                            'ingredients.name' : ingredients_included
                         }
                     }],
-                    # "must_not": [{
-                    #     'terms' : {
-                    #         'ingredients.name' : [""]
-                    #     }
-                    # }]
+                    "must_not": [{
+                        'terms' : {
+                            'ingredients.name' : ingredients_excluded
+                        }
+                    }]
                 }
             }
         }
