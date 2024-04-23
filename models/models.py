@@ -1,4 +1,3 @@
-
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
 def get_ing_from_sentence(text):
