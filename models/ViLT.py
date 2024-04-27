@@ -2,6 +2,13 @@ from transformers import ViltProcessor, ViltForQuestionAnswering, AutoTokenizer,
 import requests
 from PIL import Image
 
+"""
+(Pointless since we have CLIP)
+
+The ViLT model will allow us to query an image through text, we can ask questions about the visual elements in the image
+"""
+
+
 class ViLT():
     def __init__(self) -> None:
         model_path = "dandelin/vilt-b32-finetuned-vqa"

@@ -3,15 +3,21 @@ from typing import List, Union
 import models.models as models
 import OpenSearch.transformer as tr
 from opensearchpy import OpenSearch
+from models.Clip import CLIPClass
+"""
+Class responsible for querying our recipes
+"""
 
 class QueryManager():
     
     def __init__(self,client : OpenSearch,index_name : str):
         self.client = client
         self.index_name = index_name
+        self.clip = CLIPClass()
         
-    #region Opensearch Text Queries
-        
+    #region Opensearch Text Queries - Simple text queries
+    
+    #Total time it takes to compute the recipe
     def search_by_total_time(self, max_time: int, num_results=1):
         total_time_query = {
             'size': num_results,
@@ -143,7 +149,7 @@ class QueryManager():
             "_source": ["recipeName", "totalTimeMinutes", "difficultyLevel"],
             'query': {
                 'range': {
-                    'fields': {'lte': nr_servings}
+                    'fields': {'gte': nr_servings}
                 }
             }
         }
@@ -218,6 +224,27 @@ class QueryManager():
             query_denc["query"]["bool"]["must"].append(knn_field)
 
         # Perform the Elasticsearch search
+        response = self.client.search(index=self.index_name, body=query_denc)
+        print('\nSearch Result:')
+        pp.pprint(response)
+
+    
+            
+    def query_by_img(self, query : str, num_results = 1):
+        query_emb = self.clip.get_text_embedding(query)
+        embedding = query_emb[0].numpy()
+        query_denc = {
+           'size': num_results,
+           "_source": ["recipeName","images","ingredients.name"],
+                "query": {
+                    "knn": {
+                        "image_embedding": {
+                            "vector":embedding, 
+                            "k": 3
+                        }
+                    }
+                }       
+        }
         response = self.client.search(index=self.index_name, body=query_denc)
         print('\nSearch Result:')
         pp.pprint(response)

@@ -1,6 +1,18 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import pprint as pp
 
+"""
+The PlanLLM Model will be responsible for generating text, probably in order to respond to user queries or generate answers
+
+Given a cooking recipe, it will be able to answer questions about the recipe, such as "Next step" or "I don't have butter, what can I use" etc...
+"How soft should the batter be?" 
+
+It does not know how to handle images, we should get CLIP to handle the images
+
+These will be called through an API that will be provided
+"""
+
+
 class LLM():
     def __init__(self) -> None:
         self.tokenizer = AutoTokenizer.from_pretrained("NOVA-vision-language/PlanLLM")

@@ -3,6 +3,9 @@ import torch
 import torch.nn.functional as F
 import pprint as pp
 
+"""
+Responsible for sentence embedding, of the steps, recipe title etc...
+"""
 
 tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-mpnet-base-v2")
 model = AutoModel.from_pretrained("sentence-transformers/all-mpnet-base-v2")

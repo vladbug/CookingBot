@@ -8,10 +8,11 @@ import nltk
 nltk.download('averaged_perceptron_tagger')
 from ingredient_parser import parse_ingredient
 from deep_translator import GoogleTranslator
-
+from models.Clip import CLIPClass
 
 embedding_files = ["Defs/ingredient_embedding",
                    "Defs/steps_embedding"]
+clip = CLIPClass()
 
 def read_embedding_file(file_name):
     # Check if recipe_emb_file exists
@@ -105,6 +106,20 @@ def process_embedding(embedding_text, embeddings, save_flags, recipe,recipe_samp
             recipe_sample[index_field] = format_steps(embedding, recipe)
         else:
             recipe_sample[index_field] = embedding[0].numpy()
+
+    images_embeddings = read_embedding_file("Defs/image_embedding")
+    if images_embeddings is None:
+        save_flags["Defs/image_embedding"] = True
+        embeddings["Defs/image_embedding"] = []
+        images = recipe["images"]
+        if images != []:
+            img_url = images[0]["url"]
+            emb = clip.get_image_embedding(img_url)[0].numpy()
+            embeddings["Defs/image_embedding"].append(emb)
+            recipe_sample["image_embedding"] = emb
+    else:
+        save_flags["Defs/image_embedding"] = False
+        recipe_sample["image_embedding"] = images_embeddings[index]
     return recipe_sample
 
 def populate_index(data):
@@ -124,7 +139,6 @@ def populate_index(data):
         embeddings_text = [ing_text,steps_text]
         
         recipe_sample = process_embedding(embeddings_text, embeddings, save_flags, data[recipe_id], recipe_sample, index)
-
         res = OpenSearchUtil.opensearch_end.add_recipe(index, recipe_sample)
         pp.pprint(res)
 

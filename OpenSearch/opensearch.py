@@ -134,7 +134,22 @@ class OpenSearchEnd:
                                 }
                             }
                         }
+                    },
+                    "image_embedding":{
+                        "type":"knn_vector",
+                        "dimension": 512,
+                        "method":{
+                        "name":"hnsw",
+                        "space_type":"innerproduct",
+                        "engine":"faiss",
+                        "parameters":{
+                            "ef_construction":256,
+                            "m":48
+                        }
+                        }
                     }
+                
+                    
                 }
             }
         }
