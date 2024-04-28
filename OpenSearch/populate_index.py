@@ -114,7 +114,8 @@ def process_embedding(embedding_text, embeddings, save_flags, recipe,recipe_samp
         images = recipe["images"]
         if images != []:
             img_url = images[0]["url"]
-            emb = clip.get_image_embedding(img_url)[0].numpy()
+            emb = {"img_embedding":clip.get_image_embedding(img_url)[0].numpy(), 
+                        "text_embedding":clip.get_text_embedding("A photo of " +recipe["displayName"])[0].numpy()}
             embeddings["Defs/image_embedding"].append(emb)
             recipe_sample["image_embedding"] = emb
     else:

@@ -231,21 +231,26 @@ class QueryManager():
     
             
     def query_by_img(self, query : str, num_results = 1):
-        query_emb = self.clip.get_text_embedding(query)
+        query_emb = self.clip.get_image_embedding(query)
         embedding = query_emb[0].numpy()
-        query_denc = {
-           'size': num_results,
-           "_source": ["recipeName","images","ingredients.name"],
-                "query": {
-                    "knn": {
-                        "image_embedding": {
-                            "vector":embedding, 
-                            "k": 3
+        query_body = {
+        'size': num_results,
+        '_source': ['recipeName', 'images', 'ingredients.name'],
+        'query': {
+            'nested': {
+                'path': 'image_embedding',
+                'query': {
+                    'knn': {
+                        'image_embedding.text_embedding': {
+                            'vector': embedding,
+                            'k': 3
                         }
                     }
-                }       
-        }
-        response = self.client.search(index=self.index_name, body=query_denc)
+                },
+            }
+        },
+    }
+        response = self.client.search(index=self.index_name, body=query_body)
         print('\nSearch Result:')
         pp.pprint(response)
     #endregion 
