@@ -115,6 +115,38 @@ class CLIPClass():
             combined = combined / combined.norm(dim=-1, keepdim=True)
         return combined
     
+    def combine_txt_txt(self, text:list[str]):
+        combined = None
+        for t in text:
+            if(t.strip() != ""):
+                if len(t) > 77:
+                    all_tokens = t.split(" ")
+                    text_embeddings_commulative = None
+                    input_txt = ""
+                    for token in all_tokens:#Words
+                        if((len(input_txt) + len(token)) > 77):
+                            if(text_embeddings_commulative == None):
+                                text_embeddings_commulative = self.get_text_embedding(input_txt)
+                            else:
+                                text_embeddings_commulative += self.get_text_embedding(input_txt)
+                                
+                            input_txt = token
+                        else:
+                            input_txt += " {0}".format(token)
+                    if input_txt != "":
+                        text_embeddings_commulative += self.get_text_embedding(input_txt)
+
+                    text_embedding = text_embeddings_commulative
+                else:
+                    text_embedding = self.get_text_embedding(t)
+                    
+                if combined is None:
+                    combined = text_embedding
+                else:
+                    combined += text_embedding
+                combined = combined / combined.norm(dim=-1, keepdim=True)
+        return combined
+    
 # url = "https://m.media-amazon.com/images/S/alexa-kitchen-msa-na-prod/recipes/tasty/b2398f42037962e29f0dffe1e4f327b27bee63635f6e721e14656cc5fe0b8552.jpg"
 # url1 = "https://www.framatome.com/app/uploads/2023/10/framatome-space-header-1440x0-c-center.jpg"
 # url2 ="https://m.media-amazon.com/images/S/alexa-kitchen-msa-na-prod/recipes/thekitchn/2d41442dc2f9b4584c648cc52b08146ffde2e59f28f3e5c4574f812ba2f5636b.jpg"

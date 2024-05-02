@@ -4,6 +4,7 @@ import models.models as models
 import OpenSearch.transformer as tr
 from opensearchpy import OpenSearch
 from models.Clip import CLIPClass
+import math
 """
 Class responsible for querying our recipes
 """
@@ -234,7 +235,7 @@ class QueryManager():
         query_emb = self.clip.get_image_embedding(query)
         embedding = query_emb[0].numpy()
         query_body = {
-        'size': num_results,
+        'size': num_results/2 + (math.ceil(num_results % 2)),
         '_source': ['recipeName', 'images', 'ingredients.name'],
         'query': {
             'nested': {
@@ -250,7 +251,87 @@ class QueryManager():
             }
         },
     }
-        response = self.client.search(index=self.index_name, body=query_body)
+        txt_response = self.client.search(index=self.index_name, body=query_body)
+        
+        query_body = {
+        'size': num_results/2,
+        '_source': ['recipeName', 'images', 'ingredients.name'],
+        'query': {
+            'nested': {
+                'path': 'image_embedding',
+                'query': {
+                    'knn': {
+                        'image_embedding.img_embedding': {
+                            'vector': embedding,
+                            'k': 3
+                        }
+                    }
+                },
+            }
+        },
+    }
+        img_response = self.client.search(index=self.index_name, body=query_body)
+        response = txt_response['hits']['hits'] + img_response['hits']['hits']
+
+        unique_recipes = set()
+        unique_response = []
+        for hit in response:
+            recipe_id = hit['_id']  # Assuming recipe ID is stored in '_id'
+            if recipe_id not in unique_recipes:
+                unique_recipes.add(recipe_id)
+                unique_response.append(hit)
+        print('\nSearch Result:')
+        pp.pprint(response)
+
+    def query_by_txt(self, query : str, num_results = 1):
+        query_emb = self.clip.get_text_embedding(query)
+        embedding = query_emb[0].numpy()
+        query_body = {
+        'size': num_results/2 + (math.ceil(num_results % 2)),
+        '_source': ['recipeName', 'images', 'ingredients.name'],
+        'query': {
+            'nested': {
+                'path': 'image_embedding',
+                'query': {
+                    'knn': {
+                        'image_embedding.text_embedding': {
+                            'vector': embedding,
+                            'k': 3
+                        }
+                    }
+                },
+            }
+        },
+    }
+        txt_response = self.client.search(index=self.index_name, body=query_body)
+        
+        query_body = {
+        'size': num_results/2,
+        '_source': ['recipeName', 'images', 'ingredients.name'],
+        'query': {
+            'nested': {
+                'path': 'image_embedding',
+                'query': {
+                    'knn': {
+                        'image_embedding.img_embedding': {
+                            'vector': embedding,
+                            'k': 3
+                        }
+                    }
+                },
+            }
+        },
+    }
+        img_response = self.client.search(index=self.index_name, body=query_body)
+        response = txt_response['hits']['hits'] + img_response['hits']['hits']
+
+        unique_recipes = set()
+        unique_response = []
+        for hit in response:
+            recipe_id = hit['_id']  # Assuming recipe ID is stored in '_id'
+            if recipe_id not in unique_recipes:
+                unique_recipes.add(recipe_id)
+                unique_response.append(hit)
         print('\nSearch Result:')
         pp.pprint(response)
     #endregion 
