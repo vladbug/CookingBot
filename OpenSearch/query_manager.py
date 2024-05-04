@@ -1,10 +1,11 @@
 import pprint as pp
 from typing import List, Union
 import models.models as models
+from models.Clip import CLIPClass
 import OpenSearch.transformer as tr
 from opensearchpy import OpenSearch
-from models.Clip import CLIPClass
 import math
+
 """
 Class responsible for querying our recipes
 """
@@ -15,7 +16,6 @@ class QueryManager():
         self.client = client
         self.index_name = index_name
         self.clip = CLIPClass()
-        
     #region Opensearch Text Queries - Simple text queries
     
     #Total time it takes to compute the recipe

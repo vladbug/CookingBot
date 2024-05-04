@@ -1,0 +1,107 @@
+{
+   "dialog_id": "1",
+   "system_tone": "neutral",
+   "task":{
+      "recipe":{
+         "displayName":"Chocolate Cake",
+         "instructions":[
+            {
+               "stepText":"Preheat oven to 350 degrees",
+               "stepIngredients": [
+                  {
+                      "displayText": "1 can Coconut Milk",
+                      "staple": false,
+                      "ingredient": "Coconut Milk",
+                      "ingredientId": null,
+                      "quantity": 1,
+                      "unit": "CAN",
+                      "preparation": null,
+                      "brand": null,
+                      "asinOverride": null,
+                      "images": [],
+                      "componentIndex": 0,
+                      "productOverride": null
+                  }
+              ]
+            },
+            {
+               "stepText":"Mix ingredients together"
+            },
+            {
+               "stepText":"Bake for 30 minutes"
+            },
+            {
+               "stepText":"Wait for the cake to cool down"
+            },
+            {
+               "stepText":"Frost the cake"
+            },
+            {
+               "stepText":"Take the cake out of the fridge"
+            },
+            {
+               "stepText":"Cut the cake into slices"
+            },
+            {
+               "stepText":"Put some chocolate syrup on top of the cake"
+            }
+         ]
+      }
+   },
+   "dialog":[
+      {
+         "current_step":0,
+         "user":"Let's start the task",
+         "system":"Hello, how can I help you today?"
+      },
+      {
+         "current_step":0,
+         "user":"What do I need to do in the current step",
+         "system":"You are currently on the first step, Preheat oven to 350 degrees."
+      },
+      {
+         "current_step":1,
+         "user":"next",
+         "system":"Step 2: Mix ingredients together"
+      },
+      {
+         "current_step":2,
+         "user":"In wich step are we?",
+         "system": "We are currently on Step 2: Mix ingredients together "
+      },
+      {
+         "current_step":2,
+         "user":"next",
+         "system":"Step 3: Bake for 30 minutes"
+      },
+      {
+         "current_step":3,
+         "user":"next" ,
+         "system":"Step 4:"
+      },  
+      {
+         "current_step":2,
+         "user":"next" ,
+         "system":"Step 5:"
+      },
+      {
+         "current_step":2,
+         "user":"next" ,
+         "system":"Step 6:"
+      },
+      {
+         "current_step":1,
+         "user":"what is the current step?",
+         "system": "We are currently on the last step, Step 7: Cut the cake into slices"
+      },
+      {
+         "current_step":1,
+         "user":"I am currently on step 9",
+         "system":"ok"
+      },
+      {
+         "current_step":123,
+         "user":"next"
+      }
+      ]
+}

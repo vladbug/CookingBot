@@ -1,4 +1,4 @@
-from transformers import ViTFeatureExtractor, ViTForImageClassification
+
 from PIL import Image
 import requests
 import torch
@@ -146,6 +146,10 @@ class CLIPClass():
                     combined += text_embedding
                 combined = combined / combined.norm(dim=-1, keepdim=True)
         return combined
+    
+    def get_similarity(self, embedding1, embedding2):
+        similarity = embedding1 @ embedding2.T
+        return similarity
     
 # url = "https://m.media-amazon.com/images/S/alexa-kitchen-msa-na-prod/recipes/tasty/b2398f42037962e29f0dffe1e4f327b27bee63635f6e721e14656cc5fe0b8552.jpg"
 # url1 = "https://www.framatome.com/app/uploads/2023/10/framatome-space-header-1440x0-c-center.jpg"
