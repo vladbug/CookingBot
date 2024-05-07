@@ -2,6 +2,12 @@ from models.Clip import CLIPClass
 import pickle
 import re
 
+"""
+This class will compute the text and image embeddings for every recipe step
+It will iterate the recipe steps, compute their text embeddings and image embeddings (if they exist)
+and save them in a .pckl file 'steps_embedding' 
+"""
+
 class RecipesEmbeddings:
     def __init__(self, recipes):
         self.model = CLIPClass()

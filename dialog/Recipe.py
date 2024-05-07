@@ -2,6 +2,11 @@ from models.Clip import CLIPClass
 import pickle
 import pprint as pp
 
+"""
+This class will save a recipe to be used with the LLM, it will keep track of the current step we're on
+Change recipe steps, and even try to predict the next step from a given embedding
+"""
+
 class Recipe:
     def __init__(self, data, embeddings):
         self.data = data

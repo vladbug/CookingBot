@@ -38,7 +38,7 @@ class LLM:
 
         # This is just an example that you can try to play around
         test_text = "Hi how are you today?"
-        # In practice it should be in a format similar to this
+        # In practice it should be in a format similar to this, (should it have the spelling mistakes?)
         test_text = "<|prompter|> You are a taskbot tasked with helping users cook recipes or DIY projects. I will give you a recipe and I want you to help me do it step by step. You should always be empathetic, honest, and should always help me. If I ask you something that does not relate to the recipe you should politely reject the request and try too get me focused on the recipe. I am unsure how to cook something or do something related to the recipe you should help me to the best of your ability. Please use a neutral tone of voice. Recipe: Test Recipe Steps: Step 1: Preheat oven to 350 degrees Step 2: Mix ingredients together Step 3: Bake for 30 minutes <|endofturn|> <|prompter|> I haven't started cooking yet. <|endofturn|> <|assistant|> ok! <|endofturn|> <|prompter|> Hello <|endofturn|> <|assistant|>"
 
         data = {
