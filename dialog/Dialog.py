@@ -34,6 +34,7 @@ class Dialog:
             "dialog":[]
         }
 
+    #Set the current active recipe
     def set_recipe(self, recipe_id):
         recipe = self.recipes[recipe_id]
         emb = self.embeddings[recipe_id]
@@ -46,10 +47,12 @@ class Dialog:
         user_input = {"current_step":self.recipe.get_current_step(), "user": text}
         self.dialog_json["dialog"].append(user_input)
         response = self.llm.request(self.dialog_json)
-        self.dialog_json["dialog"].pop()
+        self.dialog_json["dialog"].pop()#Remove the last entry
+        #Reintroduce it again, but with the system answer
         self.dialog_json["dialog"].append({"current_step":self.recipe.get_current_step(), "user":text,"system": response})
         
 
+    #We always compare the text embedding with the recipe's text embedding + the image embedding
     def go_to_step_with_image(self, url):
         step = self.recipe.predict_step_with_img(url)
         step = step - 1

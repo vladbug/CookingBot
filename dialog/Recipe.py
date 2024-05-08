@@ -2,6 +2,11 @@ from models.Clip import CLIPClass
 import pickle
 import pprint as pp
 
+"""
+This class will save a recipe to be used with the LLM, it will keep track of the current step we're on
+Change recipe steps, and even try to predict the next step from a given embedding
+"""
+
 class Recipe:
     def __init__(self, data, embeddings):
         self.data = data
@@ -21,6 +26,8 @@ class Recipe:
         steps_embeddings = self.embeddings['steps_embeddings']
         max_score = 0
         best_step = ""
+        
+        #Iterate all the step embeddings for the recipe
         for step in steps_embeddings:
             img_embedding = steps_embeddings[step]['img_embedding']
             txt_embedding = steps_embeddings[step]['text_embedding']
@@ -28,10 +35,13 @@ class Recipe:
                 img_score = 0
             else:
                 img_score = self.clip.get_similarity(embedding, img_embedding)
+            
+            #Compare the embedding similarity
             score = self.clip.get_similarity(embedding, txt_embedding) + img_score
             if score > max_score:
                 max_score = score
                 best_step = step
+                
         self.current_step = best_step
         print("changed the current step to: ", best_step)
         return int(best_step)
