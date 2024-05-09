@@ -235,25 +235,25 @@ Let's analyse the contextual embedding of two phrases and look at the evolution 
     \caption{Contextual embeddings over layers}
 \end{figure}
 As we observe the evolution of the model's layers, we notice that tokens closely related to each other tend to cluster together, distinct from other tokens. With deeper layers, the model becomes adept at capturing intricate and abstract semantic relationships among words and phrases. This capability enables it to form more precise clusters based on nuanced semantic meanings, rather than just surface-level similarities. Furthermore, as we advance through the layers, the model gains access to more contextual information, further enhancing its ability to understand and process language.\subsubsection{Positional Embeddings:}
-In here let's analyse a simple BERT encoder and we will work with a sequence text with the same word repeated 20 times.\\[10pt]
+In here let's analyse a simple BERT encoder, our text sequence will be the word "recipe" repeated 20 times.\\[10pt]
 
 \begin{figure}[htbp]
     \centering
     \begin{minipage}{0.5\textwidth}
         \centering
         \includegraphics[width=\linewidth]{images/positional\_embeddings}
-        \caption{Similarity score of a text with the same word}
+        \caption{Similarity score of a text}
         \label{similarityScore}
     \end{minipage}\hfill
     \begin{minipage}{0.45\textwidth}
         \centering
         \includegraphics[width=\linewidth]{images/semi\_lua.png}
-        \caption{Positional Embeddings of a text with the same word}
+        \caption{Positional Embeddings of a text}
          \label{posEmb}
     \end{minipage}
 \end{figure}
 
-In Figure \ref{similarityScore} we notice that the diagonal elements have a similarity score of 1, which is unsurprising as they represent comparisons of each position with itself. As we traverse away from the diagonal, the similarity score decreases, indicating that the words are farther apart in position. Notably, in the middle of the matrix, we observe a distinct division between the right and left sides. The behaviour seen in the first row and column is due to the BERT model utilising sinusoidal functions for computing the positional embeddings creating the pattern seen in Figure \ref{similarityScore} which is similar to what "On Position Embedding in BERT" achieved~\cite{wang2021on}.
+In Figure \ref{similarityScore} we notice that the diagonal elements have a similarity score of 1, which is unsurprising as they represent comparisons between the same token in the same position, across both sentences. As we traverse away from the diagonal, the similarity score decreases, indicating that the words are farther apart in position. The behaviour seen in the first row and column is due to the BERT model utilising sinusoidal functions for computing the positional embeddings creating the pattern seen in Figure \ref{similarityScore} which is similar to what "On Position Embedding in BERT" achieved~\cite{wang2021on}.
 
 In Figure \ref{posEmb} we can also see a pattern that resembles the sinusoidal function which strengthens the conclusions above.
 \subsubsection{Self Attention:} 
@@ -261,7 +261,7 @@ Here we will explore the differences between the \textbf{cross encoder} and \tex
 
 In cross encoders we not only compute the self-attention, but we also compute the co-attention.
 That is, we compute the attention between our input Query and the Key values, in order to force our model to relate both text sequences directly. This allows our model to grasp more detailed relations rather than just comparing the embeddings of each independently encoded sentence (also computed in the Query-Query relation, and Key-Key).
-This is helpful because it allows our model to capture more intricate connections between the input texts. It can identify how the meaning of a token is influences by the presence of another token in the other text.
+This is helpful because it allows our model to capture more intricate connections between the input texts. It can identify how the meaning of a token is influenced by the presence of another token in the other text.
 
 \begin{figure}[htbp]
     \centering
@@ -279,11 +279,9 @@ This is helpful because it allows our model to capture more intricate connection
     \end{minipage}
 \end{figure}
 
-As we can see in Figure \ref{selfAttention} we can clearly see the separations on the matrix into four squares and each one of them indicates a self attention matrix. The matrix resembles the self attention matrix talked in class.
+As we can see in Figure \ref{selfAttention} we can clearly see the matrix separated into four squares, witch each other corresponding to the self attention matrices we mentioned earlier. The matrix resembles the self attention matrix talked in class. We can see that Figure \ref{selfAttentionClass} resembles the matrix present in Figure \ref{selfAttention}.
 
-We can see that Figure \ref{selfAttentionClass} resembles the matrix present in Figure \ref{selfAttention}.
-
- As for the dual encoder both the sentences are encoded independently therefore resulting into different results. The advantage of this compared to the cross encoding is that the computational requirements aren't as big compared to the cross encoders. 
+As for the dual encoder both the sentences are encoded independently, with their similarities being computed later on, leading to a different results when compared to cross encoder. The advantage of this architecture compared to cross encoding is that the computational requirements aren't as demanding compared to the cross encoders. 
 
 \begin{figure}[htbp]
     \centering
@@ -301,8 +299,8 @@ We can see that Figure \ref{selfAttentionClass} resembles the matrix present in 
     \end{minipage}
 \end{figure}
 
-In the embeddings of Figures \ref{dual1} and \ref{dual2} the embedding are calculated independently.
-By passing the same two phrases to both these types of encodings we will get different results based on the architecture chosen, let's explore why is that.\\[5pt]
+In the embeddings of Figures \ref{dual1} and \ref{dual2} the embeddings are calculated independently.
+By passing the same two phrases to both types of encoders we will get different results based on the architecture chosen, let's explore why is that.\\[5pt]
 
 \hspace{0.5cm} % Adjust the value as needed for the desired horizontal shift
 \begin{minipage}{1.2\textwidth} % Adjust width as needed
