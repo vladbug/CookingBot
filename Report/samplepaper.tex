@@ -237,13 +237,26 @@ Let's analyse the contextual embedding of two phrases and look at the evolution 
 As we observe the evolution of the model's layers, we notice that tokens closely related to each other tend to cluster together, distinct from other tokens. With deeper layers, the model becomes adept at capturing intricate and abstract semantic relationships among words and phrases. This capability enables it to form more precise clusters based on nuanced semantic meanings, rather than just surface-level similarities. Furthermore, as we advance through the layers, the model gains access to more contextual information, further enhancing its ability to understand and process language.\subsubsection{Positional Embeddings:}
 In here let's analyse a simple BERT encoder and we will work with a sequence text with the same word repeated 20 times.\\[10pt]
 
-\begin{figure}[!htbp]
-    \center
-    \includegraphics[scale=0.3]{images/positional\_embeddings}
-    \caption{Positional embeddings of a text with the same word}
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/positional\_embeddings}
+        \caption{Similarity score of a text with the same word}
+        \label{similarityScore}
+    \end{minipage}\hfill
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/semi\_lua.png}
+        \caption{Positional Embeddings of a text with the same word}
+         \label{posEmb}
+    \end{minipage}
 \end{figure}
 
-Here, we notice that the diagonal elements have a similarity score of 1, which is unsurprising as they represent comparisons of each position with itself. As we traverse away from the diagonal, the similarity score decreases, indicating that the words are farther apart in position. Notably, in the middle of the matrix, we observe a distinct division between the right and left sides. However, a deeper analysis of the first row and column is necessary to fully understand their behaviour.\subsubsection{Self Attention:} 
+In Figure \ref{similarityScore} we notice that the diagonal elements have a similarity score of 1, which is unsurprising as they represent comparisons of each position with itself. As we traverse away from the diagonal, the similarity score decreases, indicating that the words are farther apart in position. Notably, in the middle of the matrix, we observe a distinct division between the right and left sides. The behaviour seen in the first row and column is due to the BERT model utilising sinusoidal functions for computing the positional embeddings creating the pattern seen in Figure \ref{similarityScore} which is similar to what "On Position Embedding in BERT" achieved~\cite{wang2021on}.
+
+In Figure \ref{posEmb} we can also see a pattern that resembles the sinusoidal function which strengthens the conclusions above.
+\subsubsection{Self Attention:} 
 Here we will explore the differences between the \textbf{cross encoder} and \textbf{dual encoder} architectures.
 
 In cross encoders we not only compute the self-attention, but we also compute the co-attention.
@@ -254,7 +267,7 @@ This is helpful because it allows our model to capture more intricate connection
     \centering
     \begin{minipage}{0.50\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{images/self\_attention\_matrix.png}
+        \includegraphics[width=\linewidth]{images/full\_matrix.png}
         \caption{Self Attention Matrix}
         \label{selfAttention}
     \end{minipage}\hfill
@@ -276,13 +289,13 @@ We can see that Figure \ref{selfAttentionClass} resembles the matrix present in 
     \centering
     \begin{minipage}{0.50\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{images/dual\_encoder2.png}
+        \includegraphics[width=\linewidth]{images/dual\_key.png}
         \caption{Self Attention for Key}
          \label{dual1}
     \end{minipage}\hfill
     \begin{minipage}{0.50\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{images/dual\_encoder1.png}
+        \includegraphics[width=\linewidth]{images/dual\_query.png}
         \caption{Self Attention for Query}
          \label{dual2}
     \end{minipage}
@@ -299,7 +312,7 @@ By passing the same two phrases to both these types of encodings we will get dif
 \end{dialogue}
 \end{minipage}
 
-When we perform dual encoding, we encode each phrase separately and then calculate the similarity score between them. Using the encoder described in~\cite{reimers-2019-sentence-bert}, we might obtain an approximate score of 0.72 for two phrases discussing pasta but in different contexts. However, with cross encoding using the same model, both phrases are encoded within the same context. Consequently, the embeddings take into account the context of both phrases, resulting in a lower similarity score. This outcome is reasonable as the phrases, although mentioning pasta, are discussing different topics.
+When we perform dual encoding, we encode each phrase separately and then calculate the similarity score between them. Using the encoder described in~\cite{reimers-2019-sentence-bert}, we might obtain an approximate score of 0.72 for two phrases discussing pasta but in different contexts. However, with cross encoding using the same model, both phrases are encoded within the same context. Consequently, the embeddings take into account the context of both phrases, resulting in a lower similarity score (0.36). This outcome is reasonable as the phrases, although mentioning pasta, are discussing different topics.
 \section{Evaluation}
 \subsection{Dataset Description}
 The dataset contains a significant amount of recipe information, but not all of it is pertinent to our objectives. After careful examination, we have identified the essential data required for generating meaningful embeddings and providing accurate search results to users. Our focus has been on excluding irrelevant information and prioritizing specific details that enhance the user's search experience.
