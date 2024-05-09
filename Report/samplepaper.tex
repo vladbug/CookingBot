@@ -12,6 +12,7 @@
 \usepackage{afterpage} % For forcing table to appear after current page
 \usepackage{setspace} % For adjusting line spacing
 \usepackage{dialogue}
+\usepackage{xcolor}
 % Used for displaying a sample figure. If possible, figure files should
 % be included in EPS format.
 %
@@ -136,7 +137,7 @@ In essence, our framework enables a dynamic exploration of the dataset, granting
 \subsection{Vision Models}
 Our system currently excels in recipe searches, but what about images? Incorporating image queries would greatly enhance its functionality. To achieve this, we require a vision model like CLIP~\cite{clip} that enables us to seamlessly integrate image searches into our system. CLIP is a vision model encoder that facilitates the computation of semantic similarity between a sentence and an image.
 
-CLIP features a dual encoder architecture comprising the \textbf{image encoder}, responsible for generating embedding vectors for images, and the \textbf{text encoder}, which produces embedding vectors for text. Notably, the text encoder's embeddings are contextualized within the realm of images, offering representations of text within an image-centric context. This design enables comparisons between text and images, images and text, as well as images and other images.
+CLIP features a dual encoder architecture comprising of an \textbf{image encoder}, responsible for generating embedding vectors for images, and the \textbf{text encoder}, which produces embedding vectors for text. Notably, the text encoder's embeddings are contextualized within the realm of images, offering representations of text within an image context. This design enables comparisons between text and images, images and text, as well as images and other images.
 
 To enable this functionality, we've revised our OpenSearch index mapping to accommodate these types of embeddings. Specifically, we've introduced a new embedding that combines the recipe name with its corresponding image. As a result, our index mapping table has been updated as follows:
 
@@ -172,7 +173,7 @@ courses & array of text \\ \hline
 diets & array of text \\ \hline
 ingredients & array of object \\ \hline
 stepsEmbedding & knn\_vector \\ \hline
-imageEmbedding & knn\_vector \\ \hline
+\bfseries\colorbox{yellow}{imageEmbedding} & knn\_vector \\ \hline
 \end{tabular}
 \end{subtable}
 }
@@ -180,21 +181,21 @@ imageEmbedding & knn\_vector \\ \hline
 \label{tab:mappings}
 \end{table}
 
-These embeddings incorporate the recipe title, not just the raw image, as we observed improved query responses with this approach. To implement this, we've developed a KNN search mechanism that accepts either an image or text input. Initially, it performs a KNN search on the title embedding, retrieving the top results. Subsequently, these results are passed to another KNN search, which operates on the image embedding. This cascading process ensures comprehensive and accurate search results. Since CLIP performs better with natural language, we enhance the embedding of recipe titles by prefixing the text with \textbf{"A photo of"}. This addition creates a more natural and descriptive phrase, aligning with the contextual understanding of CLIP's model.
+These embeddings incorporate the recipe title, not just the raw image, we observed improved query responses with this approach. To implement this, we've developed a KNN search mechanism that accepts either an image or text input. Initially, it performs a KNN search on the title embedding, retrieving the top results. Subsequently, we mix these results with another KNN search, which operates on the image embedding. This allows us to get the best results from both KNN searches. Since CLIP performs better with natural language, we enhance the embedding of recipe titles by prefixing the text with \textbf{"A photo of"}. This addition creates a more natural and descriptive phrase, aligning with the contextual understanding of CLIP's model.
 
 With these new embeddings, users can now input either an image or text. For image inputs, we search in the embedding space to find recipes with the highest similarity scores. Similarly, text inputs are encoded using CLIP to compare with image embeddings, enabling retrieval of recipes whose images closely match the user's initial text query. 
 
 
-Given that we store this data in OpenSearch, performing a KNN search also returns the images associated with the recipes. This architecture allows us to retrieve images not only from image queries but also from text queries. As a result, we can seamlessly access images corresponding to their search queries, whether they input text or images.
+Given that we store this data in OpenSearch, performing a KNN search also returns the images associated with the recipes. This architecture allows us to retrieve images not only from image queries but also from text queries. As a result, we can seamlessly access images corresponding to the search query, whether it's a text input or an image input.
 
 It's worth highlighting that the original embeddings are distinct from the newly generated ones via CLIP. These CLIP text embeddings are specifically tailored for integration within an image-oriented context. 
 
 We've significantly expanded our capabilities for returning recipes, starting from basic queries and progressing to more complex ones. Initially, we utilize simple queries and a straightforward embedding method for KNN searches. With the recent integration of CLIP, our capabilities have expanded further. Now, we can conduct image queries and text queries within the context of images, leveraging CLIP's advanced features for enhanced accuracy and relevance.
 
 \subsection{Large Language Model: PlanLLM}
-After retrieving recipes it's useful to work with a recipe that the user selects. For that we will use the aid of a large language model. PlanLLM is a conversational assistant trained to assist users in completing a recipe from beginning to end and be able to answer any related or relevant requests that the user might have ~\cite{planllmeacl24}
+After retrieving a recipe, we will want to work with the specific recipe the user selected. For that we will use the aid of a large language model. PlanLLM is a conversational assistant trained to assist users in completing a recipe from beginning to end and be able to answer any related or relevant requests that the user might have ~\cite{planllmeacl24}
 
-To integrate PlanLLM into our project, we need to handle a JSON file, which is then sent to a PlanLLM API. This API returns the PlanLLM response based on the user's query. The manipulation and updating of the JSON file are managed by our system. When a user selects a recipe, we narrow our focus to the context of that specific recipe, guiding the user through the steps needed to reach the end goal.
+To integrate PlanLLM into our project, we need to manage a JSON file, which is then sent to a PlanLLM API. This API returns the PlanLLM's response based on the user's query. The manipulation and updating of the JSON file are managed by our system. When a user selects a recipe, we narrow our focus to the context of that specific recipe, guiding the user through the steps needed to reach the end goal.
 
 The user can talk with the PlanLLM and receive answers such as:\\[5pt]
 
@@ -212,7 +213,7 @@ The user can talk with the PlanLLM and receive answers such as:\\[5pt]
 \end{dialogue}
 \end{minipage}
 
-As PlanLLM isn't trained to directly process images, we'll implement an intermediate processing step. This involves transforming user-input images into text representations using CLIP. By comparing the embeddings of the image with the textual descriptions of each recipe step, we can determine which step the image corresponds to. This intermediary step ensures that images can be effectively incorporated into the recipe guidance process.
+We want to allow the user to take a photo of what he's currently doing, such as cutting tomatoes for a recipe, and we want the PlannLLM to figure out which step we're at and what we're doing. And since the PlanLLM isn't trained to directly process images we implemented an intermediate processing step to handle such cases. This involves transforming user-input images into text representations using CLIP. By comparing the embeddings of the image with the textual descriptions of each recipe step, we can determine which step the image corresponds to. This intermediary step ensures that images can be effectively incorporated into the recipe guidance process.
 
 \begin{figure}[!htbp]
     \center
@@ -220,9 +221,9 @@ As PlanLLM isn't trained to directly process images, we'll implement an intermed
     \caption{Image passing to PlanLLM}
 \end{figure}
 
-In order to re-create a conversation like the one above we need to carefully manipulate the JSON to get the answers we want. We've observed that PlanLLM struggles with transitioning between non-consecutive steps, such as starting from step 5 instead of step 1. However, the model responds effectively when the user provides a precise instruction like \textbf{"I am currently on step x"}. In such cases, PlanLLM promptly updates its internal state to reflect the specified step provided by the user.
+In order to re-create a conversation like the one above we need to carefully manipulate the JSON to get the answers we want. We've observed that PlanLLM struggles with transitioning between non-consecutive steps, such as starting from step 5 instead of step 1. However, the model responds effectively when the user provides a precise instruction like \textbf{"I am currently on step x"}. In such cases, we update the internal state to reflect the specified step provided by the user.
 
-To achieve a more fluid and natural conversation flow, we've implemented a mechanism that enables users to provide either text or images as input. Using CLIP, we predict the step in the recipe that the user is referring to by comparing embedding scores and identifying the most relevant match. This approach empowers users to jump between steps as desired, without the constraint of needing to use specific phrases like \textbf{"I am currently on step x"}. With this functionality in place, the remaining task is to orchestrate the entire dialogue with the user, which we'll cover in the next chapter.
+To achieve a more fluid and natural conversation flow, we've implemented a mechanism that enables users to provide either text or images as input. Using CLIP, we predict the step in the recipe that the user is referring to by comparing embedding scores and identifying the most relevant match. This approach allows users to jump between steps as desired through a simple photo of what they're currently doing, without the constraint of needing to use specific phrases like \textbf{"I am currently on step x"}. With this functionality in place, the remaining task is to orchestrate the entire dialogue with the user, which we'll cover in the next chapter.
 
 \subsection{Contextual Embedding and Self-Attention Analysis}
 \subsubsection{Contextual Embeddings:}
@@ -242,9 +243,53 @@ In here let's analyse a simple BERT encoder and we will work with a sequence tex
     \caption{Positional embeddings of a text with the same word}
 \end{figure}
 
-Here, we can observe that along the diagonal, the similarity score is 1, which is expected since we're comparing each position with itself. However, there's an interesting pattern in the first column and row. The similarity score between the first position and the second one is lower compared to the first and last positions. This behavior could be attributed to the fact that both the first and last words only have one neighbor, making them "similar" in that sense.
-\subsubsection{Self Attention:} 
-Here we will explore the difference of \textbf{cross encoder} and \textbf{dual encoder}. By passing the same two phrases to both these types of encodings we will get different results and let's explore why is that.\\[5pt]
+Here, we notice that the diagonal elements have a similarity score of 1, which is unsurprising as they represent comparisons of each position with itself. As we traverse away from the diagonal, the similarity score decreases, indicating that the words are farther apart in position. Notably, in the middle of the matrix, we observe a distinct division between the right and left sides. However, a deeper analysis of the first row and column is necessary to fully understand their behaviour.\subsubsection{Self Attention:} 
+Here we will explore the differences between the \textbf{cross encoder} and \textbf{dual encoder} architectures.
+
+In cross encoders we not only compute the self-attention, but we also compute the co-attention.
+That is, we compute the attention between our input Query and the Key values, in order to force our model to relate both text sequences directly. This allows our model to grasp more detailed relations rather than just comparing the embeddings of each independently encoded sentence (also computed in the Query-Query relation, and Key-Key).
+This is helpful because it allows our model to capture more intricate connections between the input texts. It can identify how the meaning of a token is influences by the presence of another token in the other text.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.50\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/self\_attention\_matrix.png}
+        \caption{Self Attention Matrix}
+        \label{selfAttention}
+    \end{minipage}\hfill
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/self\_attention\_class.jpg}
+        \caption{Self Attention Matrix Showed in Class}
+         \label{selfAttentionClass}
+    \end{minipage}
+\end{figure}
+
+As we can see in Figure \ref{selfAttention} we can clearly see the separations on the matrix into four squares and each one of them indicates a self attention matrix. The matrix resembles the self attention matrix talked in class.
+
+We can see that Figure \ref{selfAttentionClass} resembles the matrix present in Figure \ref{selfAttention}.
+
+ As for the dual encoder both the sentences are encoded independently therefore resulting into different results. The advantage of this compared to the cross encoding is that the computational requirements aren't as big compared to the cross encoders. 
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.50\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/dual\_encoder2.png}
+        \caption{Self Attention for Key}
+         \label{dual1}
+    \end{minipage}\hfill
+    \begin{minipage}{0.50\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/dual\_encoder1.png}
+        \caption{Self Attention for Query}
+         \label{dual2}
+    \end{minipage}
+\end{figure}
+
+In the embeddings of Figures \ref{dual1} and \ref{dual2} the embedding are calculated independently.
+By passing the same two phrases to both these types of encodings we will get different results based on the architecture chosen, let's explore why is that.\\[5pt]
 
 \hspace{0.5cm} % Adjust the value as needed for the desired horizontal shift
 \begin{minipage}{1.2\textwidth} % Adjust width as needed
@@ -253,6 +298,7 @@ Here we will explore the difference of \textbf{cross encoder} and \textbf{dual e
 \speak{Text2} "How much 1KG of pasta costs?"\\[5pt]
 \end{dialogue}
 \end{minipage}
+
 When we perform dual encoding, we encode each phrase separately and then calculate the similarity score between them. Using the encoder described in~\cite{reimers-2019-sentence-bert}, we might obtain an approximate score of 0.72 for two phrases discussing pasta but in different contexts. However, with cross encoding using the same model, both phrases are encoded within the same context. Consequently, the embeddings take into account the context of both phrases, resulting in a lower similarity score. This outcome is reasonable as the phrases, although mentioning pasta, are discussing different topics.
 \section{Evaluation}
 \subsection{Dataset Description}
@@ -271,7 +317,7 @@ By utilizing a translator model~\cite{deeptranslate} before feeding the data to 
 These modifications to our original dataset resulted in a more comprehensive dataset. We created a new JSON file containing all of the original information along with the additional data. This file is accessible through OpenSearch, as it is stored without being indexed. Its sole purpose is to be retrievable from OpenSearch.
 
 \subsection{PlanLLM Description}
-Every step in our process is now equipped with an embedding encoded with CLIP, and we keep these embeddings stored locally. Additionally, some steps are associated with images, and we also store the embeddings of these images locally. When we're working within the context of a recipe, we retrieve the necessary similarities by computing the similarity score with CLIP using inner product. We made the decision to handle this locally to avoid imposing unnecessary overhead on OpenSearch. It seemed more efficient to manage this task outside of the OpenSearch environment.
+Every step in our recipes have their respective embeddings encoded with CLIP, we generate these offline and store them locally for later consultation. Additionally, some steps have images associated with them, and we also store the embeddings of these images locally. When we're working within the context of a recipe, we retrieve the necessary similarities by computing the similarity score with CLIP using the inner product. We made the decision to handle this locally to avoid imposing unnecessary overhead on OpenSearch, as it seemed more efficient to manage this task outside of the OpenSearch environment.
 
 As we engage in dialogue with PlanLLM, each API response triggers an update to our JSON file, which acts as our conduit for communication with PlanLLM. This ongoing updating ensures that our JSON file always reflects the latest context and information, ready to be utilised in subsequent conversations with PlanLLM. This dynamic process enables us to maintain coherence and continuity in our interactions with PlanLLM throughout the conversation.
 \bibliographystyle{plain}
