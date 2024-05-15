@@ -8,7 +8,16 @@ and return them
 debug = False
 
 model_name = "deepset/roberta-base-squad2"
-SCORE_THRESHOLD = 0.005
+SCORE_THRESHOLD = 0.001
+
+#region - Sentences
+GENERIC_QUESTION = "What are we making or cooking?"
+INGREDIENT_QUESTION = "What are the ingredients?"
+DURATION_QUESTION = "What is the cooking time?"
+SERVINGS_QUESTION = "How many servings?"
+STYLE_QUESTION = "What is the cooking or food style?"
+DIFFICULTY_QUESTION = "How easy, hard or difficult is it?"
+#endregion
 
 class SlotFiller():
     
@@ -38,7 +47,7 @@ class SlotFiller():
     #Returns the generic information about what the user is making, if they say "I want to bake a cake" it will return cake
     def get_generic_information(self, user_input : str):
         
-        question = "What are we making or cooking?"
+        question = GENERIC_QUESTION
         
         answer = self.get_variables(question,user_input)
         return answer
@@ -46,7 +55,7 @@ class SlotFiller():
     #Returns the part of the sentence that contains the ingredients, could be like "pepperoni and cheese"
     def get_ingredient_variables(self, user_input : str):
         
-        question = "What are the ingredients?"
+        question = INGREDIENT_QUESTION
         
         answer = self.get_variables(question,user_input)
         return answer
@@ -54,7 +63,7 @@ class SlotFiller():
     #Returns the part of the sentence that contains the pretended duration of the sentence, could return 30, or "less than half an hour"
     def get_duration_variables(self, user_input : str):
         
-        question = "How long should it take?"
+        question = DURATION_QUESTION
         
         answer = self.get_variables(question,user_input)
         return answer
@@ -62,7 +71,7 @@ class SlotFiller():
     #Returns the part of the sentence that contains the number of servings, usually just returns the number
     def get_servings_variables(self, user_input : str):
         
-        question = "How many servings?"
+        question = SERVINGS_QUESTION
         
         answer = self.get_variables(question,user_input)
         return answer
@@ -70,7 +79,7 @@ class SlotFiller():
     #Returns the part of the sentence that contains the cooking style for our recipe, usually returns just the cooking style 'Mediterranean'
     def get_cooking_style_variables(self, user_input : str):
         
-        question = "What is the cooking or food style?"
+        question = STYLE_QUESTION
         
         answer = self.get_variables(question,user_input)
         return answer
@@ -78,7 +87,7 @@ class SlotFiller():
     #Returns the part of the sentence that contains the cooking difficulty, could return 'easy' or 'not too difficult'
     def get_cooking_difficulty(self, user_input : str):
         
-        question = "How easy, hard or difficult is it to make?"
+        question = DIFFICULTY_QUESTION
         
         answer = self.get_variables(question,user_input)
         return answer
@@ -108,7 +117,9 @@ class SlotFiller():
         for type,function in questions.items():
             information[type] = function(user_input)
         
-        print(information)
+        if(debug):print("From input: {0}, Obtained:\n{1}".format(user_input,information))
+        return information
+    
     
     #Debug function, to test a pair of 'question' : 'input' values
     def model_test(self, question : str, user_input : str):
@@ -118,7 +129,8 @@ class SlotFiller():
 ###################################################### TESTING ########################################################################
 #SlotFiller().get_ingredients("I would like a pizza with cheese and maybe a little tiny miniscule bit of pepperoni on it")
 
-sentence = "I would like to bake a chocolate cake for my daughter's birthday party"
-#sentence = "I would like to make a dessert for my daughter's birthday"
-
-SlotFiller().get_recipe_prompt_information(sentence)
+sentence1 = "I would like to make a meatloaf with a cheese, ham, hazelnuts and paprika filling, it should feed 4 people and take less than 30 minutes. It should be done in a Mediterranean style, and of course, it should be easy to make as I'm not very good at cooking"
+sentence2 = "I would like to make a dessert for my daughter's birthday"
+sentence3 = "I would like to make burritos with cream cheese filling and salsa, it should feed my whole family" 
+manipulation = "How Many Servings? Carrots"
+SlotFiller().get_recipe_prompt_information(manipulation)
