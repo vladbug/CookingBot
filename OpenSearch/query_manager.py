@@ -16,6 +16,7 @@ class QueryManager():
         self.client = client
         self.index_name = index_name
         self.clip = CLIPClass()
+        
     #region Opensearch Text Queries - Simple text queries
     
     #Total time it takes to compute the recipe
@@ -232,6 +233,7 @@ class QueryManager():
     
             
     def query_by_img(self, query : str, num_results = 1):
+        
         query_emb = self.clip.get_image_embedding(query)
         embedding = query_emb[0].numpy()
         query_body = {
@@ -302,7 +304,7 @@ class QueryManager():
                 },
             }
         },
-    }
+        }   
         txt_response = self.client.search(index=self.index_name, body=query_body)
         
         query_body = {
@@ -334,4 +336,45 @@ class QueryManager():
                 unique_response.append(hit)
         print('\nSearch Result:')
         pp.pprint(response)
+        
     #endregion 
+    
+    #region - Generic OpenSearch query, with slotfilling variables
+    
+    def query_generic_opensearch(self, slot_variables : dict[str:str], num_results = 5, suggestion = False):
+        
+        """
+        Slot variables is a dictionary with variables that were filled by the SlotFilling class
+        
+        For suggestions we have:
+        generic - Generic information of what the user wants
+        occasion - Information about the occasion, like a birthday party
+        ingredients - The ingredients we want included
+        
+        For another type of suggestions ("I want to make X") we have:
+        generic - Generic information about the recipe they want to make
+        ingredients - the ingredients
+        duration - the duration
+        servings - the servings
+        style - the style of cooking, such as mediterranean
+        difficulty - the difficulty of the recipe
+        """
+        
+        #Segments to fill in the query
+        query_sources = []
+        
+        if(suggestion):
+            
+        
+        else:
+            
+            
+    
+        
+        template_query = {
+            'size': num_results,
+            '_source' : query_sources,
+            'query'
+        }
+    
+    #endregion
