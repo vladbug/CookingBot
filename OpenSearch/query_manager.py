@@ -341,7 +341,7 @@ class QueryManager():
     
     #region - Generic OpenSearch query, with slotfilling variables
     
-    def query_generic_opensearch(self, slot_variables : dict[str:str], num_results = 5, suggestion = False):
+    def query_generic_opensearch(self, slot_variables : dict[str:str],num_results = 1, suggestion = False):
         
         """
         Slot variables is a dictionary with variables that were filled by the SlotFilling class
@@ -362,19 +362,65 @@ class QueryManager():
         
         #Segments to fill in the query
         query_sources = []
+        num_results = 0
         
         if(suggestion):
-            
-        
+            query_sources = ["recipeName",'ingredients.name','difficultyLevel','totalTimeMinutes']
+            num_results = max(num_results,5) #Minimum top 5 suggestions
         else:
-            
-            
+            query_sources = ["recipeName", 'ingredients.name', 'difficultyLevel', 'totalTimeMinutes']
+            num_results = max(num_results,3) #Minimum top 3 
     
         
         template_query = {
             'size': num_results,
             '_source' : query_sources,
-            'query'
+            'query' : {
+                "bool": {
+                        "must": []
+                }
+            }
         }
-    
+        
+        
+        #Add generic info to the query
+        if(suggestion):
+            generic_info_embedding = tr.encode(slot_variables['generic'] + slot_variables['occasion'])
+        else:
+            generic_info_embedding = tr.encode(slot_variables['generic'])
+        generic_embedding = generic_info_embedding[0].numpy()
+        embedding_query_element = set_embedding_info('steps_embedding.step_embedding',generic_embedding,'steps_embedding')
+        
+        template_query['query']['bool']['must'].append(embedding_query_element)
+        
+        #Add ingredient information to the query, TODO: extract only the exact ingredients
+        ingredient_info_embedding = tr.encode(slot_variables['ingredients'])
+        ingredient_embedding = ingredient_info_embedding[0].numpy()
+        embedding_query_element = set_embedding_info('ingredients.ingredient_embedding', ingredient_embedding, 'ingredients')
+        template_query['query']['bool']['must'].append(embedding_query_element) 
+                
+        
+            
+        
+        response = self.client.search(index=self.index_name, body=template_query)
+        print('\nSearch Result:')
+        pp.pprint(response)
+        
     #endregion
+    
+
+def set_embedding_info(embedding_category, embedding, path):
+    embedding_template = {
+        "nested": {
+            "path": path,
+            "query": {
+                "knn": {
+                    embedding_category: {
+                        "vector":embedding, 
+                        "k": 3
+                    }
+                }
+            }
+        }
+    }
+    return embedding_template
