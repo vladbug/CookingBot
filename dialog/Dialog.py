@@ -13,16 +13,20 @@ class Dialog:
         self.initialize_dialog_json()
 
     
-    def load_recipes(self):
+    def load_recipes(self): #TODO PASSAR POR PARAMETRO
         with open("./Defs/recipes_data_comp_trans.json", "r") as read_file:
             data = json.load(read_file)
         return data
 
-    def load_recipe_embeddings(self):
+    def load_recipe_embeddings(self): #TODO PASSAR POR PARAMETRO
         with open("./Defs/recipe_embeddings", "rb") as read_file:
             data = pickle.load(read_file)
         return data
     
+    def reset(self):
+        self.recipe = None
+        self.initialize_dialog_json()
+
     def initialize_dialog_json(self):
         self.dialog_json = {
             "dialog_id": "1",
@@ -36,6 +40,7 @@ class Dialog:
 
     #Set the current active recipe
     def set_recipe(self, recipe_id):
+        self.reset()
         recipe = self.recipes[recipe_id]
         emb = self.embeddings[recipe_id]
         self.recipe = Recipe(recipe,emb)
@@ -50,6 +55,7 @@ class Dialog:
         self.dialog_json["dialog"].pop()#Remove the last entry
         #Reintroduce it again, but with the system answer
         self.dialog_json["dialog"].append({"current_step":self.recipe.get_current_step(), "user":text,"system": response})
+        return response
         
 
     #We always compare the text embedding with the recipe's text embedding + the image embedding
@@ -57,11 +63,13 @@ class Dialog:
         step = self.recipe.predict_step_with_img(url)
         step = step - 1
         self.dialog_json["dialog"].append({"current_step":step, "user": "I am currently on step " + str(step), "system": "ok"})
+        return self.add_user_message("What should I do now?")
 
     def go_to_step_with_text(self, text):
         step = self.recipe.predict_step_with_txt(text)
         step = step - 1
         self.dialog_json["dialog"].append({"current_step":step, "user": "I am currently on step " + str(step), "system": "ok"})
+        return self.add_user_message("What should I do now?")
         
 
     def t(self):

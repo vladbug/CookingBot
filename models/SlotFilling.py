@@ -5,7 +5,7 @@ import torch as torch
 This class will be used to obtain the variables from the user inputs, depending on the situation we will try and obtain the user variables
 and return them
 """
-debug = True
+debug = False
 
 model_name = "deepset/roberta-base-squad2"
 SCORE_THRESHOLD = 0.001
@@ -127,7 +127,7 @@ class SlotFiller():
         for type,function in questions.items():
             information[type] = function(user_input)
         
-        if(debug):print("From input: {0}, Obtained:\n{1}".format(user_input,information))
+        if(debug):print("SLOT FILLING: From input: {0}, Obtained:\n{1}".format(user_input,information))
         return information
     #endregion
     

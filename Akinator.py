@@ -15,7 +15,7 @@ class Akinator:
         self._initialize_sparse_matrix()
 
     def load_similar_ingr(self):
-        with open('similar_ingredients.json', 'r') as file:
+        with open('Defs/similar_ingredients.json', 'r') as file:
             similar_ingredients_dict = json.load(file)
         return similar_ingredients_dict
     

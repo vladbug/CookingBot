@@ -25,10 +25,7 @@ class LLM:
         response = requests.get(self.url, timeout=self.max_timeout)
 
         # Check if the request was successful (status code 200)
-        if response.status_code == 200:
-            print("GET request successful for URL:", self.url)
-            print("Response:", response.text)
-        else:
+        if response.status_code != 200:
             print("GET request failed with status code:", response.status_code)
 
 
@@ -53,10 +50,7 @@ class LLM:
         response = requests.post(url, json=data, timeout=self.max_timeout)
 
         # Check if the request was successful (status code 200)
-        if response.status_code == 200:
-            print("POST request successful for URL:", url)
-            print("Response:", response.text)
-        else:
+        if response.status_code != 200:
             print("POST request failed with status code:", response.status_code)
 
 
@@ -80,10 +74,7 @@ class LLM:
         response = requests.post(url, json=data, timeout=self.max_timeout)
 
         # Check if the request was successful (status code 200)
-        if response.status_code == 200:
-            print("POST request successful for URL:", url)
-            print("Response:", response.text)
-        else:
+        if response.status_code != 200:
             print("POST request failed with status code:", response.status_code)
 
     def test(self):
@@ -115,9 +106,6 @@ class LLM:
         response = requests.post(url, json=data, timeout=self.max_timeout)
 
         # Check if the request was successful (status code 200)
-        if response.status_code == 200:
-            print("POST request successful for URL:", url)
-            print("Response:", response.text)
-        else:
+        if response.status_code != 200:
             print("POST request failed with status code:", response.status_code)
         return response.text

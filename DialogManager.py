@@ -3,6 +3,10 @@ from enum import Enum
 import random
 from models.SlotFilling import SlotFiller
 from OpenSearch.query_manager import QueryManager
+from dialog.Dialog import Dialog
+import OpenSearch.opensearch as OpenSearchUtil
+import OpenSearch.transformer as tr
+import pprint as pp
 
 
 class Acronym(Enum):
@@ -20,7 +24,8 @@ class Acronym(Enum):
     FALLBACKINTENT = "fi"
     PREVIOUSSTEPINTENT = "psi"
     TERMINATECURRENTTASKINTENT = "tcti"
-    CHITCHATINTENT = "cti"
+    CHITCHATINTENT = "chit"
+    COMPLETETASKINTENT = "cti"
     NONEOFTHESEINTENT = "noti"
     PAUSEINTENT = "pi"
     CANCELINTENT = "ci"
@@ -46,13 +51,7 @@ greetings = [
     "Hey there!",
     "Hiya!",
     "Hello there!",
-    "Good day!",
-    "What lovely weather we're having.",
-    "I love the chinese government. CCP™",
-    "Long live Xi-Jing-Ping!",
-    "How do you do fellow kids, Bing Chillin, Xazioio Bing Chillin",
-    "I know how to cook meth, just ask me how!",
-    "Giraffes are 30 times more likely to get hit by lightning than people."
+    "Good day!"
 ]
 
 greeting = False
@@ -64,9 +63,9 @@ class DialogManager(StateMachine):
     identify_process_state = State()
     recipe_selected_state = State()
     enter_recipe_state = State()
-    current_step_state = State()
-    next_step_state = State()
-    previous_step_state = State()
+    # current_step_state = State()
+    # next_step_state = State()
+    # previous_step_state = State()
 
 
     gi = greetings.to(start) | start.to(start)
@@ -76,25 +75,33 @@ class DialogManager(StateMachine):
     ssi = recipe_selected_state.to(recipe_selected_state) 
     ici = recipe_selected_state.to(recipe_selected_state)
     startSI = recipe_selected_state.to(enter_recipe_state)
-    tcti = enter_recipe_state.to(start) | current_step_state.to(start) | next_step_state.to(start) | previous_step_state.to(start)
-    stopI = enter_recipe_state.to(start) | current_step_state.to(start) | next_step_state.to(start) | previous_step_state.to(start)
+    tcti = enter_recipe_state.to(start)
+    stopI = enter_recipe_state.to(start)
     rti = enter_recipe_state.to(enter_recipe_state)
     asi = enter_recipe_state.to(enter_recipe_state)
-    nsi = enter_recipe_state.to(current_step_state) | current_step_state.to(next_step_state) | next_step_state.to(next_step_state) | previous_step_state.to(next_step_state)
-    gtsi = enter_recipe_state.to(current_step_state) | next_step_state.to(current_step_state) | previous_step_state.to(current_step_state) | current_step_state.to(current_step_state)
-    subi = current_step_state.to(current_step_state) | next_step_state.to(next_step_state) | previous_step_state.to(previous_step_state)
-    cti = current_step_state.to(start) | next_step_state.to(start) # TODO ver melhor
-    psi = next_step_state.to(previous_step_state) | previous_step_state.to(previous_step_state)
-
-    
+    gtsi = enter_recipe_state.to(enter_recipe_state) 
+    subi = enter_recipe_state.to(enter_recipe_state) 
+    cti =  enter_recipe_state.to(start)
+    nsi = enter_recipe_state.to(enter_recipe_state)
+    psi = enter_recipe_state.to(enter_recipe_state)
 
     def __init__(self):
         super(DialogManager, self).__init__()
         #self._activate_initial_state()
-        self.send(convert_intent("GreetingIntent"))
+        self.connect()
         self.slot_filler = SlotFiller()
+        self.plan_llm = Dialog()
+        self.curr_recipe = None
+        self.recipes = []
+        self.send_msg("GreetingIntent")
         #self.query_manager = QueryManager()
       
+    def connect(self):
+        OpenSearchUtil.opensearch_end.disconnect()
+        client_info = OpenSearchUtil.opensearch_end.connect()
+        client = client_info[0]
+        index_name = client_info[1]
+        self.query_manager = QueryManager(client,index_name)
 
     def on_enter_greetings(self):
         idx = random.randint(0, len(greetings) - 1)
@@ -104,41 +111,85 @@ class DialogManager(StateMachine):
     
     def on_enter_start(self, event: str, source: State, target: State, message: str = ""):
         print("\nEntered start from transition: {0}".format(event))
-        print(message)
-        #self.slot_filling.
+        self.plan_llm.reset()
         
     
     def on_enter_suggestion_state(self, event: str, source: State, target: State, message: str = ""):
         print("\nEntered suggestion_state from transition: {0}".format(event))
-        print(message)
-        # Now we need to process the message of the user, e.g "Give me a suggestion of a recipe with tomato"
-        #self.slot_filling.
         res = self.slot_filler.get_sugi_prompt_information(message)
-        print(res)
-        #print(self.query_manager.query_by_ingredients(res['ingredients']))
+        res = self.query_manager.query_generic_opensearch(res, suggestion=True)
+        res = res["hits"]["hits"][0]
+        self.curr_recipe = res["_source"]["recipe_json"]
+        self.curr_recipe["id"] = res["_id"]
+        print(self.curr_recipe["displayName"])
+     
+    def on_enter_identify_process_state(self, event: str, source: State, target: State, message: str = ""):
+        print("\nEntered identify_process_state from transition: {0}".format(event))
+        # print(message)
+        res = self.slot_filler.get_ipi_prompt_information(message)
+        res = self.query_manager.query_generic_opensearch(res)
+        self.recipes = res["hits"]["hits"]
+        recipes_names = [recipe["_source"]["recipeName"] for recipe in self.recipes]
+        print("Recipes: ", recipes_names)
 
+    def best_recipe(self, msg_embedding):
+        positions = [tr.encode("I want the first one "), tr.encode("I want the second one "), tr.encode("I want the third one ")]
+        best_recipe = None
+        best_similarity = 0
+        for i in range(len(self.recipes)):
+            recipe = self.recipes[i]["_source"]
+            recipe["id"] = self.recipes[i]["_id"]
+            recipe_embedding = positions[i]
+            similarity = tr.cosine_similarity(msg_embedding, recipe_embedding)
+            if similarity > best_similarity:
+                best_similarity = similarity
+                best_recipe = recipe
+        best_recipe["recipe_json"]["id"] = best_recipe["id"]
+        return best_recipe["recipe_json"]
+        
+    def on_enter_recipe_selected_state(self, event: str, source: State, target: State, message: str = ""):
+        print("\nEntered recipe_selected_state from transition: {0}".format(event))
+        if event == Acronym.SELECTINTENT.value:
+            msg_embedding = tr.encode(message)
+            self.curr_recipe = self.best_recipe(msg_embedding)
+            print("Selected recipe: ", self.curr_recipe["displayName"])
+        elif event == Acronym.INGREDIENTSCONFIRMATIONINTENT.value:
+            ingrs = set()
+            for ing in self.curr_recipe["ingredients"]:
+                ingrs.add(ing["ingredient"])
+            print("Ingredients: ", ingrs)
+        elif event == Acronym.SHOWSTEPSINTENT.value:
+            steps = [step["stepText"] for step in self.curr_recipe["instructions"]]
+            print("Steps: ", steps)
+
+    def on_enter_enter_recipe_state(self, event: str, source: State, target: State, message: str = ""):
+        print("\nEntered enter_recipe_state from transition: {0}".format(event))
+        if event == Acronym.STARTSTEPSINTENT.value:
+            self.plan_llm.set_recipe(self.curr_recipe["id"])
+        elif event == Acronym.GOTOSTEPINTENT.value:
+            print("Response: " + self.plan_llm.go_to_step_with_text(message))
+        else:
+            print("Response: " + self.plan_llm.add_user_message(message))
+
+    def convert_intent(self, intent):
+        return Acronym[intent.upper()].value
+    
+    def send_msg(self, intent, message=""):
+        intent = self.convert_intent(intent)
+        self.send(intent, message=message)
+        
+        
         
 
-        
-        
-        
-        
-
-def convert_intent(intent):
-    return Acronym[intent.upper()].value
 
 d = DialogManager()
-d.send(convert_intent("SuggestionsIntent"), message="Suprise me with a recipe for dinner") 
-d.send(convert_intent("SuggestionsIntent"),  message="My daughter's birthday is coming up, do you have any ideas for something for her party?")
-d.send(convert_intent("SelectIntent"))
-d.send(convert_intent("StartStepsIntent"))
-d.send(convert_intent("ResumeTaskIntent"))
-d.send(convert_intent("AdjustServingsIntent"))
-d.send(convert_intent("NextStepIntent"))
-d.send(convert_intent("NextStepIntent"))
-d.send(convert_intent("SubstitutionIntent"))
-d.send(convert_intent("PreviousStepIntent"))
-d.send(convert_intent("PreviousStepIntent"))
-d.send(convert_intent("GotoStepIntent"))
-d.send(convert_intent("StopIntent"),message="I want to stop this")
-print(d.current_state)
+d.send_msg("SuggestionsIntent", message="Suprise me with a recipe for dinner") 
+# d.send_msg("SuggestionsIntent",  message="My daughter's birthday is coming up, do you have any ideas for something for her party?")
+d.send_msg("IdentifyProcessIntent", message="I want to make a cake with chocolate, that is easy to make.")
+d.send_msg("SelectIntent", message="I want the second one")
+d.send_msg("IngredientsConfirmationIntent",message="Can you confirm the ingredients?")
+#d.send_msg("ShowStepsIntent", message="")
+d.send_msg("StartStepsIntent", message="Start the recipe")
+d.send_msg("PreviousStepIntent", message="previous")
+#d.send_msg("GoToStepIntent", message="go to step 2" )
+print("Current state: ", d.current_state)

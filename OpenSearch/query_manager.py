@@ -5,6 +5,7 @@ from models.Clip import CLIPClass
 import OpenSearch.transformer as tr
 from opensearchpy import OpenSearch
 import math
+import pprint as pp
 
 """
 Class responsible for querying our recipes
@@ -346,12 +347,12 @@ class QueryManager():
         """
         Slot variables is a dictionary with variables that were filled by the SlotFilling class
         
-        For suggestions we have:
+        For really generic suggestions we have:
         generic - Generic information of what the user wants
         occasion - Information about the occasion, like a birthday party
         ingredients - The ingredients we want included
         
-        For another type of suggestions ("I want to make X") we have:
+        For other type of suggestions ("I want to make X with Y ingredients etc...") we have:
         generic - Generic information about the recipe they want to make
         ingredients - the ingredients
         duration - the duration
@@ -365,50 +366,62 @@ class QueryManager():
         num_results = 0
         
         if(suggestion):
-            query_sources = ["recipeName",'ingredients.name','difficultyLevel','totalTimeMinutes']
+            query_sources = ["recipe_json", "recipeName",'ingredients.name','difficultyLevel','totalTimeMinutes']
             num_results = max(num_results,5) #Minimum top 5 suggestions
-        else:
-            query_sources = ["recipeName", 'ingredients.name', 'difficultyLevel', 'totalTimeMinutes']
+        else:#Search
+            query_sources = ["recipe_json", "recipeName", 'ingredients.name', 'difficultyLevel', 'totalTimeMinutes']
             num_results = max(num_results,3) #Minimum top 3 
-    
         
         template_query = {
             'size': num_results,
             '_source' : query_sources,
             'query' : {
                 "bool": {
-                        "must": []
+                        "must": [],
+                        "should" : []
                 }
             }
         }
         
+        #region - Add generic info to the query
+        generic_info_embedding = tr.encode(slot_variables['generic'])
         
-        #Add generic info to the query
-        if(suggestion):
-            generic_info_embedding = tr.encode(slot_variables['generic'] + slot_variables['occasion'])
-        else:
-            generic_info_embedding = tr.encode(slot_variables['generic'])
+        #Compute embedding for the generic info
         generic_embedding = generic_info_embedding[0].numpy()
+        
+        #Call function to fill in the slots on the template embedding
         embedding_query_element = set_embedding_info('steps_embedding.step_embedding',generic_embedding,'steps_embedding')
         
         template_query['query']['bool']['must'].append(embedding_query_element)
+        #endregion
         
-        #Add ingredient information to the query, TODO: extract only the exact ingredients
+        #region Add ingredient information to the query, TODO: extract only the exact ingredients
         ingredient_info_embedding = tr.encode(slot_variables['ingredients'])
         ingredient_embedding = ingredient_info_embedding[0].numpy()
         embedding_query_element = set_embedding_info('ingredients.ingredient_embedding', ingredient_embedding, 'ingredients')
         template_query['query']['bool']['must'].append(embedding_query_element) 
-                
+        #endregion
         
-            
+        #region - Add optional slot filling variables
+        if(slot_variables['ingredients'] != "NULL"):
+            template_query = add_ingredients_to_query(template_query, slot_variables['ingredients'])
+        
+        if(not suggestion):
+            if(slot_variables['duration'] != "NULL"):template_query['query']['bool']['should'].append(set_should_info('totalTimeMinutes',slot_variables['duration']))
+            if(slot_variables['servings'] != "NULL"):template_query['query']['bool']['should'].append(set_should_info('servings',slot_variables['servings']))
+            if(slot_variables['style'] != "NULL"):template_query['query']['bool']['should'].append(set_should_info('cuisines',slot_variables['style']))
+            if(slot_variables['difficulty'] != "NULL"):template_query['query']['bool']['should'].append(set_should_info('difficultyLevel',slot_variables['difficulty']))
+        
+        #pp.pprint("\n\nFinal Query shape:\n{0}\n\n".format(template_query['query']['bool']['should']))
         
         response = self.client.search(index=self.index_name, body=template_query)
-        print('\nSearch Result:')
-        pp.pprint(response)
+        return response
+        #print('\nSearch Result:')
+        #pp.pprint(response)
         
     #endregion
     
-
+#region - Auxiliary functions for generic template query
 def set_embedding_info(embedding_category, embedding, path):
     embedding_template = {
         "nested": {
@@ -424,3 +437,28 @@ def set_embedding_info(embedding_category, embedding, path):
         }
     }
     return embedding_template
+
+def set_should_info(name, variable):
+    embedding_template = {
+                "match": {
+                    name: variable
+                }
+            }
+    return embedding_template
+    
+def add_ingredients_to_query(template_query, ingredients):
+    for ing in ingredients.split(" "):
+        embedding_template = {
+            "nested": {
+                "path": 'ingredients',
+                "query": {
+                    "match": {
+                        'ingredients.name': ing
+                    }
+                }
+            }
+        }
+        template_query['query']['bool']['should'].append(embedding_template) 
+    #print("Ingredients added to should clause: {0}".format(template_query['query']['bool']['should']))
+    return template_query
+#endregion
