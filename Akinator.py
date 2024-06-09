@@ -106,6 +106,7 @@ class Akinator:
         # Ask for an initial ingredient
         print("Enter an initial ingredient to start:")
         initial_ingredient = input().strip().lower()
+        self.asked_questions.append(initial_ingredient)
         self.remove_without_ingredient(initial_ingredient)
 
         while len(self.recipes) > 1:
@@ -166,7 +167,6 @@ def ing_embeddings():
     # Calculate similarities using cached embeddings
     for i in range(len(unique_ingredients)):
         ing_i_embedding = embeddings_cache[unique_ingredients[i]]
-        print(i, 2065)
         for j in range(i + 1, len(unique_ingredients)):
             ing_j_embedding = embeddings_cache[unique_ingredients[j]]
             similarity = cosine_similarity(ing_i_embedding, ing_j_embedding)
