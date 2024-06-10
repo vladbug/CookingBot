@@ -11,6 +11,7 @@ class IntentDetector:
         self.model = AutoModelForSequenceClassification.from_pretrained("NOVA-vision-language/task-intent-detector")
 
     def detect_intent(self, agent_text, user_text):
+        #print(agent_text, user_text)
         inputs = self.tokenizer.encode_plus(agent_text, user_text, return_tensors="pt")
         outputs = self.model(**inputs)
         logits = outputs.logits

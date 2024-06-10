@@ -2,7 +2,6 @@
 from PIL import Image
 import requests
 import torch
-import pprint as pp
 
 from PIL import Image
 import requests
@@ -111,23 +110,3 @@ class CLIPClass():
         similarity = embedding1 @ embedding2.T
         return similarity
     
-#region - Test urls
-# url = "https://m.media-amazon.com/images/S/alexa-kitchen-msa-na-prod/recipes/tasty/b2398f42037962e29f0dffe1e4f327b27bee63635f6e721e14656cc5fe0b8552.jpg"
-# url1 = "https://www.framatome.com/app/uploads/2023/10/framatome-space-header-1440x0-c-center.jpg"
-# url2 ="https://m.media-amazon.com/images/S/alexa-kitchen-msa-na-prod/recipes/thekitchn/2d41442dc2f9b4584c648cc52b08146ffde2e59f28f3e5c4574f812ba2f5636b.jpg"
-# print(CLIPClass().similarity_score_img_img(url1,url2))
-# url1 = "https://as2.ftcdn.net/v2/jpg/00/18/66/99/1000_F_18669964_Txz4BS0OErzj9v9DHM3N51d8yFVa85dR.jpg"
-url2 = "https://img.etimg.com/thumb/msid-95423731,width-650,height-488,imgsize-56196,resizemode-75/tomatoes-canva.jpg"
-url3 = "https://m.media-amazon.com/images/S/alexa-kitchen-msa-na-prod/recipes/wholefoods/14f9645d498dc9d1670ac5a1e465f033003014bce943e90955ec2ac3f26ef79b.jpg"
-url4 = "https://m.media-amazon.com/images/S/alexa-kitchen-msa-na-prod/recipes/seriouseats/2a8b13b2411b6cea820bc206842a31d2a8a5d7d90dad62243e177077a6719151.jpg"
-
-# print(CLIPClass().similarity_score_img_img(url2,url3))
-# print(CLIPClass().similarity_score_img_img(url2,url4))
-# pear_comb = CLIPClass().combine_img_txt(["egg"],url3)
-# tom_comb = CLIPClass().combine_img_txt(["tomato","red onion","salt"],url4)
-
-# print(CLIPClass().get_image_embedding(url2) @ pear_comb.T)
-# print(CLIPClass().get_image_embedding(url2) @ tom_comb.T)
-
-#print(CLIPClass().similarity_score_txt_img("tomato","https://m.media-amazon.com/images/S/alexa-kitchen-msa-na-prod/recipes/simplyrecipes/ca8af795572430afc9f20a9f42ba36da8bd11edd3e1bdff91bdd39aa279fd4c5.jpg"))
-#endregion

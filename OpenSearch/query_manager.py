@@ -1,6 +1,6 @@
 import pprint as pp
-from typing import List, Union
-import models.models as models
+from typing import List
+import models.models as ing_extractor
 from models.Clip import CLIPClass
 import OpenSearch.transformer as tr
 from opensearchpy import OpenSearch
@@ -193,7 +193,7 @@ class QueryManager():
         pp.pprint(response)
     
     def query_by_ingredient(self, query : str, num_results = 1):
-        parsed_ingredients = models.get_ing_from_sentence(query)
+        parsed_ingredients = ing_extractor.get_ing_from_sentence(query)
     
         query_denc = {
                 'size': num_results,
@@ -396,6 +396,7 @@ class QueryManager():
         #endregion
         
         #region Add ingredient information to the query, TODO: extract only the exact ingredients
+        
         ingredient_info_embedding = tr.encode(slot_variables['ingredients'])
         ingredient_embedding = ingredient_info_embedding[0].numpy()
         embedding_query_element = set_embedding_info('ingredients.ingredient_embedding', ingredient_embedding, 'ingredients')
@@ -447,7 +448,9 @@ def set_should_info(name, variable):
     return embedding_template
     
 def add_ingredients_to_query(template_query, ingredients):
-    for ing in ingredients.split(" "):
+    
+    ingredients_list = ing_extractor.get_ing_from_sentence(ingredients)
+    for ing in ingredients_list:
         embedding_template = {
             "nested": {
                 "path": 'ingredients',

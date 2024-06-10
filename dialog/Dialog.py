@@ -4,24 +4,13 @@ import json
 import pickle
 import pprint as pp
 class Dialog:
-    def __init__(self):
-        self.recipes = self.load_recipes()
-        self.embeddings = self.load_recipe_embeddings()
+    def __init__(self,recipes, embeddings):
+        self.recipes = recipes
+        self.embeddings = embeddings
         self.recipe = None
         self.llm = LLM()
         self.dialog_json ={}
         self.initialize_dialog_json()
-
-    
-    def load_recipes(self): #TODO PASSAR POR PARAMETRO
-        with open("./Defs/recipes_data_comp_trans.json", "r") as read_file:
-            data = json.load(read_file)
-        return data
-
-    def load_recipe_embeddings(self): #TODO PASSAR POR PARAMETRO
-        with open("./Defs/recipe_embeddings", "rb") as read_file:
-            data = pickle.load(read_file)
-        return data
     
     def reset(self):
         self.recipe = None
@@ -72,15 +61,15 @@ class Dialog:
         return self.add_user_message("What should I do now?")
         
 
-    def t(self):
-        self.set_recipe("4")
-        self.add_user_message("Let's begin!")
-        self.go_to_step_with_text("Pipe the macarons onto the parchment paper in 1\u00bd-inch (3-cm) circles, spacing at least 1-inch (2-cm) apart.")
-        #self.go_to_step_with_image("https://static.wixstatic.com/media/fd9026_2278803b508a4a38b4b8dc730540d246~mv2.jpg/v1/fill/w_1000,h_1000,al_c,q_85/fd9026_2278803b508a4a38b4b8dc730540d246~mv2.jpg")
-        self.add_user_message("What is the current step?")
-        #self.add_user_message("go to the step where I use vanilla to incorporate it to the recipe")
-        #self.add_user_message("Not that step, the step five where we use vanilla")
-        #pp.pprint(self.dialog_json)
-        #self.add_user_message("What is the current step?")
+    # def t(self):
+    #     self.set_recipe("4")
+    #     self.add_user_message("Let's begin!")
+    #     self.go_to_step_with_text("Pipe the macarons onto the parchment paper in 1\u00bd-inch (3-cm) circles, spacing at least 1-inch (2-cm) apart.")
+    #     #self.go_to_step_with_image("https://static.wixstatic.com/media/fd9026_2278803b508a4a38b4b8dc730540d246~mv2.jpg/v1/fill/w_1000,h_1000,al_c,q_85/fd9026_2278803b508a4a38b4b8dc730540d246~mv2.jpg")
+    #     self.add_user_message("What is the current step?")
+    #     #self.add_user_message("go to the step where I use vanilla to incorporate it to the recipe")
+    #     #self.add_user_message("Not that step, the step five where we use vanilla")
+    #     #pp.pprint(self.dialog_json)
+    #     #self.add_user_message("What is the current step?")
       
     

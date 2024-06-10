@@ -1,8 +1,6 @@
 from transformers import AutoTokenizer, AutoModel
 import torch
 import torch.nn.functional as F
-import pprint as pp
-from sklearn.metrics.pairwise import cosine_similarity
 
 """
 Responsible for sentence embedding, of the steps, recipe title etc...

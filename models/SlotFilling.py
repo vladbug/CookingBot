@@ -38,7 +38,7 @@ class SlotFiller():
     
     def get_variables(self, question : str, context : str):
         
-        print("Processing request for: \'{0}\' for context \'{1}\'...\n".format(question,context))
+        if(debug):print("Processing request for: \'{0}\' for context \'{1}\'...\n".format(question,context))
         
         qa_input = {
         'context': context,

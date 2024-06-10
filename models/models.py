@@ -1,5 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
+#BERT
+
 def get_ing_from_sentence(text):
     tokenizer = AutoTokenizer.from_pretrained("chambliss/distilbert-for-food-extraction")
     model = AutoModelForTokenClassification.from_pretrained("chambliss/distilbert-for-food-extraction")

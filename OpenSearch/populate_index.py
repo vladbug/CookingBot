@@ -1,7 +1,6 @@
 import pprint as pp
 import OpenSearch.transformer as tr
 import OpenSearch.opensearch as OpenSearchUtil
-from sklearn.feature_extraction.text import CountVectorizer
 import os
 import pickle
 import nltk

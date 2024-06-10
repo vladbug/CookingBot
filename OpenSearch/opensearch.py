@@ -1,10 +1,6 @@
 from typing import Tuple
-import OpenSearch.transformer as tr
-import opensearchpy
 from opensearchpy import OpenSearch
 import pprint as pp
-from ingredient_parser import parse_ingredient
-import models.models as models
 
 class OpenSearchEnd:
     def __init__(self):

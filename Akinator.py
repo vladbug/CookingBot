@@ -5,12 +5,13 @@ from scipy.sparse import csr_matrix
 
 
 class Akinator:
-    def __init__(self, recipes = None):
+    def __init__(self, recipes = None, dialog_manager = None):
         self.recipes = recipes
         self.ingredient_index = {}
         self.recipe_index = []
         self.sparse_matrix = None
         self.asked_questions = []
+        self.dialog_manager = dialog_manager
         self.similar_ingr = self.load_similar_ingr()
         self._initialize_sparse_matrix()
 
@@ -104,8 +105,8 @@ class Akinator:
         self.reset()
         
         # Ask for an initial ingredient
-        print("Enter an initial ingredient to start:")
-        initial_ingredient = input().strip().lower()
+        self.dialog_manager.print_msg("Enter an initial ingredient to start:")
+        initial_ingredient = input("User: ").strip().lower()
         self.asked_questions.append(initial_ingredient)
         self.remove_without_ingredient(initial_ingredient)
 
@@ -115,88 +116,89 @@ class Akinator:
                 print("No more questions available.")
                 break
             
-            print(f"Does the recipe contain {question}? (yes/no)")
-            answer = input().strip().lower()
+            self.dialog_manager.print_msg(f"Does the recipe contain {question}? (yes/no)")
+            answer = input("User: ").strip().lower()
             
             if answer == 'yes':
                 self.remove_without_ingredient(question)
             elif answer == 'no':
                 self.remove_with_ingredient(question)
             else:
-                print("Please answer with 'yes' or 'no'.")
+                self.dialog_manager.print_msg("Please answer with 'yes' or 'no'.")
 
-            print(f"Remaining recipes: {len(self.recipes)}")
+            #self.dialog_manager.print_msg(f"Remaining recipes: {len(self.recipes)}")
 
         if len(self.recipes) == 1:
             title = list(self.recipes.values())[0]["displayName"]
-            print(f"The recipe is likely: {title}")
+            self.dialog_manager.print_msg(f"The recipe is likely: {title}")
         else:
-            print("No matching recipe found.")
+            self.dialog_manager.print_msg("No matching recipe found.")
 
 
 
 
-def load_json():
-    with open("./Defs/recipes_data_comp_trans.json", "r") as read_file:
-        data = json.load(read_file)
-    return data
+if __name__ == "__main__":
+    def load_json():
+        with open("./Defs/recipes_data_comp_trans.json", "r") as read_file:
+            data = json.load(read_file)
+        return data
 
-recipes = load_json()
+    recipes = load_json()
 
 
-from OpenSearch import transformer as model
-from sklearn.metrics.pairwise import cosine_similarity
-import pprint as pp
-def ing_embeddings():
-    unique_ingredients = set()
-    for recipe in recipes:
-        ingredients = recipes[recipe]["ingredients"]
-        for ing in ingredients:
-            ingredient_name = ing["ingredient"].lower().strip()
-            if ingredient_name:
-                unique_ingredients.add(ingredient_name)
-    unique_ingredients = list(unique_ingredients)
-    threshold = 0.6
-    similar_ingredients_dict = {ingredient: [] for ingredient in unique_ingredients}
-    embeddings_cache = {}
- 
-    # Compute embeddings and fill cache
-    for ingredient in unique_ingredients:
-        embeddings_cache[ingredient] = model.encode([ingredient])
-    print("embeddings computed")
-    # Calculate similarities using cached embeddings
-    for i in range(len(unique_ingredients)):
-        ing_i_embedding = embeddings_cache[unique_ingredients[i]]
-        for j in range(i + 1, len(unique_ingredients)):
-            ing_j_embedding = embeddings_cache[unique_ingredients[j]]
-            similarity = cosine_similarity(ing_i_embedding, ing_j_embedding)
-            if similarity > threshold:
-                similar_ingredients_dict[unique_ingredients[i]].append(unique_ingredients[j])
-                similar_ingredients_dict[unique_ingredients[j]].append(unique_ingredients[i])
-
-    # Save the dictionary to a file
-    with open('similar_ingredients.json', 'w') as file:
-        json.dump(similar_ingredients_dict, file, indent=4)
+    from OpenSearch import transformer as model
+    from sklearn.metrics.pairwise import cosine_similarity
+    import pprint as pp
+    def ing_embeddings():
+        unique_ingredients = set()
+        for recipe in recipes:
+            ingredients = recipes[recipe]["ingredients"]
+            for ing in ingredients:
+                ingredient_name = ing["ingredient"].lower().strip()
+                if ingredient_name:
+                    unique_ingredients.add(ingredient_name)
+        unique_ingredients = list(unique_ingredients)
+        threshold = 0.6
+        similar_ingredients_dict = {ingredient: [] for ingredient in unique_ingredients}
+        embeddings_cache = {}
     
-    return similar_ingredients_dict
-    
+        # Compute embeddings and fill cache
+        for ingredient in unique_ingredients:
+            embeddings_cache[ingredient] = model.encode([ingredient])
+        #print("embeddings computed")
+        # Calculate similarities using cached embeddings
+        for i in range(len(unique_ingredients)):
+            ing_i_embedding = embeddings_cache[unique_ingredients[i]]
+            for j in range(i + 1, len(unique_ingredients)):
+                ing_j_embedding = embeddings_cache[unique_ingredients[j]]
+                similarity = cosine_similarity(ing_i_embedding, ing_j_embedding)
+                if similarity > threshold:
+                    similar_ingredients_dict[unique_ingredients[i]].append(unique_ingredients[j])
+                    similar_ingredients_dict[unique_ingredients[j]].append(unique_ingredients[i])
 
-#print(cosine_similarity(model.encode(["bread"]), model.encode(["bread crumbs"])))
-# similar_ingredients_dict = ing_embeddings()
-# for ing, similar_ings in similar_ingredients_dict.items():
-#     pp.pprint(f"Ingredient: {ing}, Similar Ingredients: {similar_ings}")
+        # Save the dictionary to a file
+        with open('similar_ingredients.json', 'w') as file:
+            json.dump(similar_ingredients_dict, file, indent=4)
+        
+        return similar_ingredients_dict
+        
+
+    #print(cosine_similarity(model.encode(["bread"]), model.encode(["bread crumbs"])))
+    # similar_ingredients_dict = ing_embeddings()
+    # for ing, similar_ings in similar_ingredients_dict.items():
+    #     pp.pprint(f"Ingredient: {ing}, Similar Ingredients: {similar_ings}")
 
 
-# a = Akinator(recipes)
-# a.remove_without_ingredient("lasagna noodle")
-# a.remove_with_ingredient("egg")
-# a.remove_without_ingredient("white onion")
-# a.remove_with_ingredient("ginger root")
-# a.remove_with_ingredient("no-boil lasagna noodles")
-# a.remove_without_ingredient("parmesan cheese")
-# a.remove_with_ingredient("vegetable broth")
-# print(len(a.recipes), "141"in a.recipes)
-# print(a.best_question_to_ask())
+    # a = Akinator(recipes)
+    # a.remove_without_ingredient("lasagna noodle")
+    # a.remove_with_ingredient("egg")
+    # a.remove_without_ingredient("white onion")
+    # a.remove_with_ingredient("ginger root")
+    # a.remove_with_ingredient("no-boil lasagna noodles")
+    # a.remove_without_ingredient("parmesan cheese")
+    # a.remove_with_ingredient("vegetable broth")
+    # print(len(a.recipes), "141"in a.recipes)
+    # print(a.best_question_to_ask())
 
-a = Akinator(recipes)
-a.play()
+    a = Akinator(recipes)
+    a.play()
