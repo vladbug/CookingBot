@@ -122,7 +122,7 @@ class StateMachineCB(StateMachine):
     nsi = enter_recipe_state.to(enter_recipe_state)
     psi = enter_recipe_state.to(enter_recipe_state)
     yi = recipe_selected_state.to(enter_recipe_state)
-    ni = recipe_selected_state.to(identify_process_state)
+    ni = recipe_selected_state.to(identify_process_state) | identify_process_state.to(identify_process_state)
     aki = start.to(akinator_state)
     qi = enter_recipe_state.to(enter_recipe_state)
     ri = enter_recipe_state.to(enter_recipe_state)
@@ -219,7 +219,7 @@ class StateMachineCB(StateMachine):
     def on_enter_identify_process_state(self, event: str, source: State, target: State, message: str = ""):
         #print("\nEntered identify_process_state from transition: {0}".format(event))
         
-        if event != Acronym.NOINTENT:
+        if event != Acronym.NOINTENT.value:
             #Get recipes (10) from Opensearch
             res = self.slot_filler.get_ipi_prompt_information(message)
             res = self.query_manager.query_generic_opensearch(res, num_results=10)
@@ -234,7 +234,7 @@ class StateMachineCB(StateMachine):
         
         recipes_html = []
         res = ""
-        for recipe in self.recipes:
+        for recipe in self.recipes[:3]:
             recipe_name = recipe["_source"]["recipeName"]
             res += recipe_name + "\n"
             recipe_image = recipe["_source"]["recipe_json"]["images"][0]["url"]
@@ -257,7 +257,7 @@ class StateMachineCB(StateMachine):
         #Print multiple suggestions to user
         self.dialog_manager.print_user_msg(message)
         self.dialog_manager.print_msg(res)
-        self.recipes = self.recipes[:3]
+        self.recipes = self.recipes[3:]
 
     #Selects the best recipe to match the user's request, when we prompt him 3 recipes we select the one we think he wants
     def best_recipe(self, msg_embedding):

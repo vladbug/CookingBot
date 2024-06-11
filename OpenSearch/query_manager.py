@@ -363,7 +363,6 @@ class QueryManager():
         
         #Segments to fill in the query
         query_sources = []
-        num_results = 0
         
         if(suggestion):
             query_sources = ["recipe_json", "recipeName",'ingredients.name','difficultyLevel','totalTimeMinutes']
@@ -371,7 +370,7 @@ class QueryManager():
         else:#Search
             query_sources = ["recipe_json", "recipeName", 'ingredients.name', 'difficultyLevel', 'totalTimeMinutes']
             num_results = max(num_results,3) #Minimum top 3 
-        
+        print("Num results: {0}".format(num_results))
         template_query = {
             'size': num_results,
             '_source' : query_sources,
