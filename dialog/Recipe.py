@@ -47,7 +47,7 @@ class Recipe:
                 best_step = step
                 
         self.current_step = best_step
-        print("changed the current step to: ", best_step)
+        #print("changed the current step to: ", best_step)
         return int(best_step)
     
     def predict_step_with_txt(self, text):

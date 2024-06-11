@@ -12,6 +12,7 @@ import re
 from models.IntentDetector import IntentDetector
 from Akinator import Akinator
 from sklearn.metrics.pairwise import cosine_similarity
+from IPython.display import Video, Image, HTML, display
 
 class Acronym(Enum):
     GETCURIOSITIESINTENT = "gci"
@@ -67,7 +68,20 @@ class DialogManager:
     
     
     def print_msg(self, message):
-        print("TaskBot: ", message)
+        #print("TaskBot: ", message)
+        if message != "":
+            display(HTML(f"""<div class ="images" style="display:inline-block;">
+                            Task Bot: {message} <br>
+            </div>
+            """))
+
+    def print_user_msg(self, message):
+        #print("User: ", message)
+        if message != "":
+            display(HTML(f"""<div class ="images" style="display:inline-block;">
+                        User: {message} <br>
+            </div>
+            """))
 
     def process_message(self, message):
         intent = " "
@@ -75,8 +89,10 @@ class DialogManager:
             intent = "AkinatorIntent"
         else:
             intent = self.intent_detector.detect_intent(self.agent_response, message)
-            
-        self.state_machine.send_msg(intent, message)
+        try:
+            self.state_machine.send_msg(intent, message)
+        except Exception as e:
+            self.print_msg("I can't do that. Please try again.")
 
 
 
@@ -92,12 +108,12 @@ class StateMachineCB(StateMachine):
     gi = greetings.to(start) | start.to(start)
     sugi = start.to(suggestion_state) | suggestion_state.to(suggestion_state) | identify_process_state.to(suggestion_state) | recipe_selected_state.to(suggestion_state)
     ipi = start.to(identify_process_state) | identify_process_state.to(identify_process_state) | suggestion_state.to(identify_process_state) | recipe_selected_state.to(identify_process_state)
-    si = suggestion_state.to(recipe_selected_state) | identify_process_state.to(recipe_selected_state)
+    si = suggestion_state.to(recipe_selected_state) | identify_process_state.to(recipe_selected_state) | recipe_selected_state.to(identify_process_state)
     ssi = recipe_selected_state.to(recipe_selected_state) 
     ici = recipe_selected_state.to(recipe_selected_state)
     startSI = recipe_selected_state.to(enter_recipe_state)
     tcti = enter_recipe_state.to(start)
-    stopI = enter_recipe_state.to(start)
+    stopI = enter_recipe_state.to(start) | akinator_state.to(start)
     rti = enter_recipe_state.to(enter_recipe_state)
     asi = enter_recipe_state.to(enter_recipe_state)
     gtsi = enter_recipe_state.to(enter_recipe_state) 
@@ -110,7 +126,7 @@ class StateMachineCB(StateMachine):
     aki = start.to(akinator_state)
     qi = enter_recipe_state.to(enter_recipe_state)
     ri = enter_recipe_state.to(enter_recipe_state)
-    fi = enter_recipe_state.to(enter_recipe_state)
+    fi = enter_recipe_state.to(enter_recipe_state) | recipe_selected_state.to(identify_process_state)
 
     def __init__(self, dialog_manager):
         self.dialog_manager = dialog_manager
@@ -120,7 +136,7 @@ class StateMachineCB(StateMachine):
         self.recipe_embeddings = self.load_recipe_embeddings()
         self.slot_filler = SlotFiller()
         self.plan_llm = Dialog(self.recipes, self.recipe_embeddings)
-        self.akinator = Akinator(self.recipes)
+        self.akinator = Akinator(self.recipes, dialog_manager)
         self.curr_recipe = None
         self.recipes = []
         self.send_msg("GreetingIntent")
@@ -163,6 +179,7 @@ class StateMachineCB(StateMachine):
     def on_enter_start(self, event: str, source: State, target: State, message: str = ""):
         #print("\nEntered start from transition: {0}".format(event))
         if event == Acronym.STOPINTENT.value:
+            self.dialog_manager.print_user_msg(message)
             self.dialog_manager.print_msg(explore_msg)
             return
         self.plan_llm.reset()
@@ -181,9 +198,22 @@ class StateMachineCB(StateMachine):
         self.curr_recipe = res["_source"]["recipe_json"]
         self.curr_recipe["id"] = res["_id"]
         
-        res = suggestion_response.format(self.curr_recipe["displayName"])
-        self.dialog_manager.agent_response = res
+        recipe_name = self.curr_recipe["_source"]["recipeName"]
+        self.dialog_manager.agent_response = recipe_name
+        recipe_image = self.curr_recipe["_source"]["recipe_json"]["images"][0]["url"]
+        recipe_html = f"""
+        <div class="images" style="display:inline-block;">
+            <img src="{recipe_image}" class="img-responsive" width="80px">
+            <br>
+        </div>
+        <div class="images" style="display:inline-block;">
+            {recipe_name} <br>
+        </div>
+        <br>
+        """
+        res = suggestion_response.format(recipe_html)
         #Print suggestion to user
+        self.dialog_manager.print_user_msg(message)
         self.dialog_manager.print_msg(res)
 
     def on_enter_identify_process_state(self, event: str, source: State, target: State, message: str = ""):
@@ -198,15 +228,34 @@ class StateMachineCB(StateMachine):
         
         if self.recipes == []:
             self.dialog_manager.agent_response = no_recipes_left_response
+            self.dialog_manager.print_user_msg(message)
             self.dialog_manager.print_msg(no_recipes_left_response)
             return
-        #Load recipes into StateMachine
-        recipes_names = [recipe["_source"]["recipeName"] for recipe in self.recipes]
-        recipes_names = "\n".join(recipes_names)
         
-        res = identify_response.format(recipes_names)
+        recipes_html = []
+        res = ""
+        for recipe in self.recipes:
+            recipe_name = recipe["_source"]["recipeName"]
+            res += recipe_name + "\n"
+            recipe_image = recipe["_source"]["recipe_json"]["images"][0]["url"]
+            recipe_html = f"""
+            <div class="images" style="display:inline-block;">
+                <img src="{recipe_image}" class="img-responsive" width="80px">
+                <br>
+            </div>
+            <div class="images" style="display:inline-block;">
+                {recipe_name} <br>
+            </div>
+            <br>
+            """
+            recipes_html.append(recipe_html)
+    
+        recipes_html = "\n".join(recipes_html)
         self.dialog_manager.agent_response = res
+        res = identify_response.format(recipes_html)
+        
         #Print multiple suggestions to user
+        self.dialog_manager.print_user_msg(message)
         self.dialog_manager.print_msg(res)
         self.recipes = self.recipes[:3]
 
@@ -241,6 +290,7 @@ class StateMachineCB(StateMachine):
             self.curr_recipe = self.best_recipe(msg_embedding)
             res = confirmation_response.format(self.curr_recipe["displayName"])
             self.dialog_manager.agent_response = res
+            self.dialog_manager.print_user_msg(message)
             self.dialog_manager.print_msg(res)
         elif event == Acronym.INGREDIENTSCONFIRMATIONINTENT.value:
             ingrs = set()
@@ -248,12 +298,14 @@ class StateMachineCB(StateMachine):
                 ingrs.add(ing["ingredient"])
             res = ingredients_response.format("\n".join(ingrs))
             self.dialog_manager.agent_response = res
+            self.dialog_manager.print_user_msg(message)
             self.dialog_manager.print_msg(res)
             
         elif event == Acronym.SHOWSTEPSINTENT.value:
             steps = [step["stepText"] for step in self.curr_recipe["instructions"]]
             res = steps_response.format("\n".join(steps))
             self.dialog_manager.agent_response = res
+            self.dialog_manager.print_user_msg(message)
             self.dialog_manager.print_msg(res)
 
     def extract_links(self, text):
@@ -272,28 +324,46 @@ class StateMachineCB(StateMachine):
         if event == Acronym.YESINTENT.value or event == Acronym.STARTSTEPSINTENT.value:
             self.plan_llm.set_recipe(self.curr_recipe["id"])
             res = self.plan_llm.add_user_message("Let's begin!")
+            res.replace('"', '')
+            self.dialog_manager.print_user_msg(message)
             self.dialog_manager.print_msg(res)  
             
         elif event == Acronym.GOTOSTEPINTENT.value:
             links = self.extract_links(message)
             if len(links) > 0:
                 res = self.plan_llm.go_to_step_with_image(links[0])
+                res.replace('"', '')
                 self.dialog_manager.agent_response = res
+                img_html = f"""
+                <div class="images" style="display:inline-block;">
+                    <img src="{links[0]}" class="img-responsive" width="80px">
+                    <br>
+                </div>
+                """
+                message = message.replace(links[0], img_html)
+                self.dialog_manager.print_user_msg(message)
                 self.dialog_manager.print_msg(res)
             else:
                 res = self.plan_llm.go_to_step_with_text(message)
+                res.replace('"', '')
                 self.dialog_manager.agent_response = res
+                self.dialog_manager.print_user_msg(message)
                 self.dialog_manager.print_msg(res)
             
         else:
             res = self.plan_llm.add_user_message(message)
+            res.replace('"', '')
             self.dialog_manager.agent_response = res
+            self.dialog_manager.print_user_msg(message)
             self.dialog_manager.print_msg(res)
         
     
-    def on_enter_aki(self, event: str, source: State, target: State, message: str = ""):
+    def on_enter_akinator_state(self, event: str, source: State, target: State, message: str = ""):
         #print("\nEntered akinator_state from transition: {0}".format(event))
+        self.dialog_manager.print_user_msg(message)
+        self.dialog_manager.print_msg(akinator_game_msg)
         self.akinator.play()
+        self.send_msg("StopIntent")
         
 
 
@@ -303,7 +373,7 @@ suggestion_response = """
     Sure, here's a suggestion for you to cook! Here's a recipe for you to try out:\n{0}\nIf you don't like this recipe idea, ask me again for more.
 """
 identify_response = """
-    I found these recipes that match what you asked for, let me know which one you prefer:\n{0}\nIf you don't like these recipe ideas, ask me again for more.
+    I found these recipes that match what you asked for, let me know which one you prefer:<br>{0}<br>If you don't like these recipe ideas, ask me again for more.
 """
 
 confirmation_response = """
@@ -321,6 +391,8 @@ Here are the steps for the recipe you selected:\n{0}
 """
 
 explore_msg = "If you want to explore more recipes, just ask me!"
+
+akinator_game_msg = "Let's have some fun! You will think of a recipe and I will try to guess it."
 #endregion
 
 

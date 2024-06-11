@@ -22,7 +22,7 @@ class RecipesEmbeddings:
         if images == []:
             return None
         url = images[0]["url"]
-        print(url)
+        #print(url)
         return self.model.get_image_embedding(url)
         
     def compute_embeddings(self):
@@ -35,7 +35,7 @@ class RecipesEmbeddings:
             for step in recipe_steps:
                 images = step["stepImages"]
                 text = step["stepText"]
-                print(text)
+                #print(text)
                 text_embedding = self.compute_step_text_embeddings(text)
                 img_embedding = self.compute_step_img_embeddings(images)
                 step_id = step["stepNumber"]

@@ -107,6 +107,8 @@ class Akinator:
         # Ask for an initial ingredient
         self.dialog_manager.print_msg("Enter an initial ingredient to start:")
         initial_ingredient = input("User: ").strip().lower()
+        if initial_ingredient == "exit":
+            return
         self.asked_questions.append(initial_ingredient)
         self.remove_without_ingredient(initial_ingredient)
 
@@ -116,15 +118,17 @@ class Akinator:
                 print("No more questions available.")
                 break
             
-            self.dialog_manager.print_msg(f"Does the recipe contain {question}? (yes/no)")
+            self.dialog_manager.print_msg(f"Does the recipe contain {question}? (yes/no/exit)")
             answer = input("User: ").strip().lower()
             
             if answer == 'yes':
                 self.remove_without_ingredient(question)
             elif answer == 'no':
                 self.remove_with_ingredient(question)
+            elif answer == 'exit':
+                return
             else:
-                self.dialog_manager.print_msg("Please answer with 'yes' or 'no'.")
+                self.dialog_manager.print_msg("Please answer with 'yes', 'no' or 'exit'.")
 
             #self.dialog_manager.print_msg(f"Remaining recipes: {len(self.recipes)}")
 
