@@ -71,7 +71,7 @@ class DialogManager:
         #print("TaskBot: ", message)
         if message != "":
             display(HTML(f"""<div class ="images" style="display:inline-block;">
-                            Task Bot: {message} <br>
+                             <strong>Task Bot:</strong> {message} <br>
             </div>
             """))
 
@@ -79,11 +79,13 @@ class DialogManager:
         #print("User: ", message)
         if message != "":
             display(HTML(f"""<div class ="images" style="display:inline-block;">
-                        User: {message} <br>
+                        <strong>User:</strong> {message} <br>
             </div>
             """))
 
     def process_message(self, message):
+        if message == "":
+            return
         intent = " "
         if "akinator" in message.lower():#Hardcoded intent for akinator
             intent = "AkinatorIntent"
@@ -218,14 +220,16 @@ class StateMachineCB(StateMachine):
 
     def on_enter_identify_process_state(self, event: str, source: State, target: State, message: str = ""):
         #print("\nEntered identify_process_state from transition: {0}".format(event))
-        
         if event != Acronym.NOINTENT.value:
             #Get recipes (10) from Opensearch
             res = self.slot_filler.get_ipi_prompt_information(message)
             res = self.query_manager.query_generic_opensearch(res, num_results=10)
             
             self.recipes = res["hits"]["hits"]
-        
+        else:
+            index = min(3, len(self.recipes))
+            self.recipes = self.recipes[index:]
+        index = min(3, len(self.recipes))
         if self.recipes == []:
             self.dialog_manager.agent_response = no_recipes_left_response
             self.dialog_manager.print_user_msg(message)
@@ -234,7 +238,7 @@ class StateMachineCB(StateMachine):
         
         recipes_html = []
         res = ""
-        for recipe in self.recipes[:3]:
+        for recipe in self.recipes[:index]:
             recipe_name = recipe["_source"]["recipeName"]
             res += recipe_name + "\n"
             recipe_image = recipe["_source"]["recipe_json"]["images"][0]["url"]
@@ -257,7 +261,6 @@ class StateMachineCB(StateMachine):
         #Print multiple suggestions to user
         self.dialog_manager.print_user_msg(message)
         self.dialog_manager.print_msg(res)
-        self.recipes = self.recipes[3:]
 
     #Selects the best recipe to match the user's request, when we prompt him 3 recipes we select the one we think he wants
     def best_recipe(self, msg_embedding):
@@ -266,8 +269,8 @@ class StateMachineCB(StateMachine):
         
         best_recipe = None
         best_similarity = 0
-        
-        for i in range(len(self.recipes)):
+        index = min(3, len(self.recipes))
+        for i in range(index):
             recipe = self.recipes[i]["_source"]
             recipe["id"] = self.recipes[i]["_id"]
             recipe_embedding = positions[i]
