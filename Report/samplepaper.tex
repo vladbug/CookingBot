@@ -314,7 +314,7 @@ When we perform dual encoding, we encode each phrase separately and then calcula
 \subsection{Dialog Manager}
 Conversational AIs are now prevalent, found in applications ranging from ChatGPT and Siri to voice assistants in our cars. These technologies have a wide range of applications, and we plan to leverage them in our project. Utilizing the setup established in the previous sections, we will orchestrate a dialogue system that identifies user intents. This system will guide the user through finding a recipe and completing the selected recipe.
 \subsubsection{Intent Detector}
-We need to understand what the user wants. For that we utilize an intent detector in order to extract the intent from a natural language phrase given by the user. We used an adapted TWIZ intent detection model, trained on the TWIZ dataset ~\cite{intentdetect}. The intents extracted from the user input will be used in order to traverse our \textbf{state machine} and control the dialog with the user.
+We need to understand what the user wants when talking to our agent. For that we utilize an intent detector in order to extract the intent from a natural language phrase given by the user. We used an adapted TWIZ intent detection model, trained on the TWIZ dataset ~\cite{intentdetect}. The intents extracted from the user input will be used in order to traverse our \textbf{state machine} and control the dialog with the user.
 \subsubsection{Slot-Filling}
 In addition to identifying the user's intent to determine the required action, it is essential to extract relevant information from their input. This process is known as slot-filling, where slots act as variables containing values necessary for informing the dialog manager's decisions. By recognising these variables from the user's prompt, we can effectively understand the prompt's context and identify the data needed for further processing.
 
@@ -386,7 +386,7 @@ To implement the guessing game algorithm, we first construct an initial matrix w
 
 To guess the recipe, we prompt the user for ingredients, choosing the ingredient to ask based on the one with the highest entropy value. This helps narrow down options more effectively. We calculate the probability of each ingredient being in a certain recipe by counting the number of 1's in each row (indicating the presence of the ingredient in a recipe) and dividing it by the total number of ingredients.
 
-Selecting the ingredient with the highest entropy value allows us to remove more rows from our matrix compared to any other ingredient (along with discarding the ingredient with the highest entropy). Consequently, this presents a maximization problem where our goal is to always maximize the entropy of the next question posed to the user. Figure \ref{akimat} provides a visual representation of the algorithm.
+Selecting the ingredient with the highest entropy value allows us to narrow down the search space in the best possible way. Consequently, this presents a maximization problem where our goal is to always maximize the entropy of the next question posed to the user until we end up with a matrix with only one row that will be the recipe. Figure \ref{akimat} provides a visual representation of the algorithm.
 
 \begin{figure}[!htbp]
     \center
@@ -416,18 +416,24 @@ Every step in our recipes have their respective embeddings encoded with CLIP, we
 
 As we engage in dialogue with PlanLLM, each API response triggers an update to our JSON file, which acts as our conduit for communication with PlanLLM. This ongoing updating ensures that our JSON file always reflects the latest context and information, ready to be utilised in subsequent conversations with PlanLLM. This dynamic process enables us to maintain coherence and continuity in our interactions with PlanLLM throughout the conversation.
 
-\subsection{Baselines}
-I don't know XD (palha?)
 \subsection{Results analysis}
-After implementing all the elements in the project pipeline we allow a user to communicate with a ChatBot in order to guide him from: selecting a recipe that the user wants, picking that recipe, guiding him trough that recipe until the end or even switching to another one if the user wants to do that.
+After implementing all the elements in the project pipeline, we enabled user interaction with a ChatBot. This ChatBot assists the user in selecting a desired recipe, picking that recipe, and providing step-by-step guidance through the recipe. Additionally, it allows the user to switch to a different recipe if desired. Figure \ref{proto} illustrates an instance of the functional prototype. The primary focus of this project was on the backend implementation rather than the user interface.
 
 \begin{figure}[!htbp]
     \center
-    \includegraphics[scale=0.2]{images/prototype}
+    \includegraphics[scale=0.3]{images/proto}
     \caption{Prototype of the ChatBot}
     \label{proto}
 \end{figure}
+Engaging with the ChatBot generally presents positive results. However, there are occasional imperfections. During recipe searches, the embeddings sometimes produce unexpected results. Due to the similarity between some embedding values, the ChatBot might return recipes that do not exactly match the user’s intent, even though they are related to the user’s prompt. This can lead to recipes being suggested that do not align with the user’s desires. While another user prompt can rectify this issue, it is not ideal. Ideally, all results should be accurate from the start. Nevertheless, the overall results are quite satisfactory.
 
+Within PlanLLM, occasional issues may arise. However, these can be managed effectively using our state machine and additional logic. The techniques employed to address these issues are detailed in sections \texttt{2.4} and \texttt{3.2}.
+
+Both the intent detector and the slot-filling model produced positive results. Naturally, the performance of the slot-filling model relied on the quality of the data pairs provided to it.
+
+Our new feature, the guessing game, delivers excellent results, accurately guessing the recipe most of the time with only a few steps required. However, the quality of the guessing relies on the embeddings that relate ingredients to each other. For example, while "bread" and "bread crumbs" are related since bread can be used to make bread crumbs, embeddings alone cannot account for this reasoning. The user must specify precisely whether they mean "bread" or "bread crumbs," which can be limiting.
+
+To provide more flexibility, if the user mentions that the recipe includes "bread," we also include "bread crumbs" in the search. Without this adjustment, specifying "bread" would exclude all recipes that don't explicitly list "bread", even if they contain "bread crumbs". This could lead to inaccurate filtering since the user might consider "bread" and "bread crumbs" interchangeable. Our implementation addresses this by creating a list of similar ingredients based on embedding values, helping to avoid such issues.
 
 \section{Critical discussion}
 We've introduced a fully functional ChatBot with interactive features that leverage embedding similarity, both for text and image processing. Additionally, the implementation includes a dialog manager to coordinate the entire conversation. By incorporating gamification elements, the ChatBot offers more engaging and diverse interactions, enhancing the overall user experience.
