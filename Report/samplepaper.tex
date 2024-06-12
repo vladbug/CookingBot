@@ -311,6 +311,90 @@ By passing the same two phrases to both types of encoders we will get different 
 \end{minipage}
 
 When we perform dual encoding, we encode each phrase separately and then calculate the similarity score between them. Using the encoder described in~\cite{reimers-2019-sentence-bert}, we might obtain an approximate score of 0.72 for two phrases discussing pasta but in different contexts. However, with cross encoding using the same model, both phrases are encoded within the same context. Consequently, the embeddings take into account the context of both phrases, resulting in a lower similarity score (0.36). This outcome is reasonable as the phrases, although mentioning pasta, are discussing different topics.
+\subsection{Dialog Manager}
+Conversational AIs are now prevalent, found in applications ranging from ChatGPT and Siri to voice assistants in our cars. These technologies have a wide range of applications, and we plan to leverage them in our project. Utilizing the setup established in the previous sections, we will orchestrate a dialogue system that identifies user intents. This system will guide the user through finding a recipe and completing the selected recipe.
+\subsubsection{Intent Detector}
+We need to understand what the user wants. For that we utilize an intent detector in order to extract the intent from a natural language phrase given by the user. We used an adapted TWIZ intent detection model, trained on the TWIZ dataset ~\cite{intentdetect}. The intents extracted from the user input will be used in order to traverse our \textbf{state machine} and control the dialog with the user.
+\subsubsection{Slot-Filling}
+In addition to identifying the user's intent to determine the required action, it is essential to extract relevant information from their input. This process is known as slot-filling, where slots act as variables containing values necessary for informing the dialog manager's decisions. By recognising these variables from the user's prompt, we can effectively understand the prompt's context and identify the data needed for further processing.
+
+We used the \textbf{roberta-base} model trained on question-answer pairs for slot-filling extraction~\cite{slot}. This method, known as Question-Answering, helps extract relevant information from text. By preparing a set of questions and feeding both these questions and the user input into the model, we can extract important variables for our search. For example, to identify the process, we use the following questions:
+
+\hspace{2.5cm} % Adjust the value as needed for the desired horizontal shift
+\begin{minipage}{1.2\textwidth} % Adjust width as needed
+\begin{dialogue}
+\speak{Q1} "What are we making or cooking?"
+\speak{Q2} "What are the ingredients?"
+\speak{Q3} "What is the cooking time?"
+\speak{Q4} "How many servings?"
+\speak{Q5} "What is the cooking or food style?"
+\speak{Q6} "How easy, hard or difficult is it?"\\[5pt]
+\end{dialogue}
+\end{minipage}
+
+By asking these questions to the model and feeding the user input we are able to retrieve the relevant variables/information from the prompt.
+\subsubsection{State Machine}
+To manage our dialog with the user and leverage the \textbf{intent detector} and \textbf{slot-filler}, we designed a state machine that governs the conversation flow. The \textbf{intents} serve as transitions between states, while the \textbf{variables} extracted by the \textbf{slot-filler} enable us to perform operations or searches when entering a specific state via a particular transition.
+
+\begin{figure}[!htbp]
+    \center
+    \includegraphics[scale=0.15]{images/automata}
+    \caption{State Machine}
+    \label{autom}
+\end{figure}
+We have defined all possible state transitions and use the automaton in Figure \ref{autom} to guide the conversation. By employing a library~\cite{autolib} to construct this state machine, we automatically implement safeguards. If an undefined transition is encountered, a generic response is returned. Additionally, users have the option to exit the PlanLLM realm and reset to the beginning of our state machine. For an explanation of all the acronyms used in the transitions, please refer to the \texttt{StateMachineCB.py} file.
+\newpage
+
+Here is an example of the conversation with the agent:\\
+
+\hspace{0.5cm} % Adjust the value as needed for the desired horizontal shift
+\begin{minipage}{1.2\textwidth} % Adjust width as needed
+\begin{dialogue}
+\speak{ChatBot} Hiya!
+\speak{User} I want a recipe with tomato and chicken 
+\speak{ChatBot} I found these recipes that match what you asked for.\\
+ Let me know which one you prefer:\\ 
+ \texttt{IMAGE 1 - Burrito Cups} \texttt{IMAGE 2 - NAME 2} ...\\
+ If you don't like these recipe ideas, ask me again for more.
+\speak{User} I want the first one.
+\speak{ChatBot} So you want to make: Burrito Cups correct?
+\speak{User} Yes, I want that one.
+\speak{ChatBot} Ready to dive in? Step 1: Heat a large skillet ...
+\speak{User} Go to the next step.
+\speak{ChatBot} Step 2: Mix together all the burrito ...\\
+\speak{User} Actually I want to exit this recipe.
+\speak{ChatBot} If you want to explore more recipes, just ask me!\\[5pt]
+\end{dialogue}
+\end{minipage}
+The agent can guide the user to a recipe either through suggestions or by searching for what the user wants. Once a recipe is selected, PlanLLM assists the user step-by-step through the recipe, with the option to quit at any time and return to the start of the conversation.
+
+
+\subsubsection{Guess the recipe game}
+For our group-specific implementation, we chose to add a gamification element to our project. We implemented a guessing game where the user thinks of a recipe and provides an initial ingredient found in that recipe. The user then asks yes-or-no questions to help us identify the recipe they have in mind. This is similar to the Akinator game but tailored to the context of our project.
+
+In order to do that we must add a new state in our state machine that will be responsible for processing the game as can be seen in Figure \ref{automz}.
+
+\begin{figure}[!htbp]
+    \center
+    \includegraphics[scale=0.1]{images/aki}
+    \caption{Guessing game state}
+    \label{automz}
+\end{figure}
+To start the game, the user must type a prompt that includes the string \textbf{akinator}. This will signal that the user wants to play the Akinator game, and upon entering the appropriate state, the game will begin.
+
+To implement the guessing game algorithm, we first construct an initial matrix where each column represents an ingredient and each row represents a recipe. Each cell in the matrix is either 0 or 1, indicating whether a certain ingredient is present in that recipe or not. We perform pre-processing by using embedding similarity for each ingredient to construct a JSON file (\texttt{similar\_ingredients.json}) containing all similar ingredients to a given one.
+
+To guess the recipe, we prompt the user for ingredients, choosing the ingredient to ask based on the one with the highest entropy value. This helps narrow down options more effectively. We calculate the probability of each ingredient being in a certain recipe by counting the number of 1's in each row (indicating the presence of the ingredient in a recipe) and dividing it by the total number of ingredients.
+
+Selecting the ingredient with the highest entropy value allows us to remove more rows from our matrix compared to any other ingredient (along with discarding the ingredient with the highest entropy). Consequently, this presents a maximization problem where our goal is to always maximize the entropy of the next question posed to the user. Figure \ref{akimat} provides a visual representation of the algorithm.
+
+\begin{figure}[!htbp]
+    \center
+    \includegraphics[scale=0.15]{images/akinator}
+    \caption{Guessing game state}
+    \label{akimat}
+\end{figure}
+
 \section{Evaluation}
 \subsection{Dataset Description}
 The dataset contains a significant amount of recipe information, but not all of it is pertinent to our objectives. After careful examination, we have identified the essential data required for generating meaningful embeddings and providing accurate search results to users. Our focus has been on excluding irrelevant information and prioritizing specific details that enhance the user's search experience.
@@ -331,6 +415,40 @@ These modifications to our original dataset resulted in a more comprehensive dat
 Every step in our recipes have their respective embeddings encoded with CLIP, we generate these offline and store them locally for later consultation. Additionally, some steps have images associated with them, and we also store the embeddings of these images locally. When we're working within the context of a recipe, we retrieve the necessary similarities by computing the similarity score with CLIP using the inner product. We made the decision to handle this locally to avoid imposing unnecessary overhead on OpenSearch, as it seemed more efficient to manage this task outside of the OpenSearch environment.
 
 As we engage in dialogue with PlanLLM, each API response triggers an update to our JSON file, which acts as our conduit for communication with PlanLLM. This ongoing updating ensures that our JSON file always reflects the latest context and information, ready to be utilised in subsequent conversations with PlanLLM. This dynamic process enables us to maintain coherence and continuity in our interactions with PlanLLM throughout the conversation.
+
+\subsection{Baselines}
+I don't know XD (palha?)
+\subsection{Results analysis}
+After implementing all the elements in the project pipeline we allow a user to communicate with a ChatBot in order to guide him from: selecting a recipe that the user wants, picking that recipe, guiding him trough that recipe until the end or even switching to another one if the user wants to do that.
+
+\begin{figure}[!htbp]
+    \center
+    \includegraphics[scale=0.2]{images/prototype}
+    \caption{Prototype of the ChatBot}
+    \label{proto}
+\end{figure}
+
+
+\section{Critical discussion}
+We've introduced a fully functional ChatBot with interactive features that leverage embedding similarity, both for text and image processing. Additionally, the implementation includes a dialog manager to coordinate the entire conversation. By incorporating gamification elements, the ChatBot offers more engaging and diverse interactions, enhancing the overall user experience.
+
+Despite achieving excellent results in both search and dialogue, we encountered imperfections. Occasionally, depending on the image provided by the user, we may retrieve recipes that don't actually contain the specified ingredient due to similarities in color. To address this challenge, we had to acknowledge these limitations and devise workarounds. Some of our approaches include:
+
+\begin{itemize}
+	\item We translated certain ingredients to prevent unnecessary similarities;
+	\item We implemented sum embeddings to extract additional information from our dataset;
+	\item We adapted PlanLLM to enable navigation to a specific step based on the user's input regarding that step, or even if an image is provided as input;
+\end{itemize}
+
+Occasionally, the intent detector produced unexpected results, yielding some strange outcomes. Fine-tuning the model would be beneficial to enhance accuracy and mitigate these issues, ensuring more reliable results. Despite this, the intent extraction generally performs adequately for our requirements.
+
+Creating effective questions for the slot-filler posed another challenge, as certain questions yielded better results than others. To address this, we conducted experimentation to identify the most suitable questions to use with the question-answering system, ensuring optimal performance of the slot-filler.
+
+\subsection{Future Work}
+For future enhancements, several areas could be further developed. Firstly, optimizing the intent detector to fully utilize its capabilities would enable its application in broader contexts. Secondly, exploring additional embedding options and conducting more queries to OpenSearch could improve the quality of results, allowing for better selection among existing options.
+
+To further enhance the guessing game, an option is to train a dedicated model to predict the recipe a user is thinking of. This would entail gathering gameplay data from users and training the model based on this information. Such an approach diverges from our current method and holds the potential to significantly improve the game's performance and would be a different approach from what we have done.
+
 \bibliographystyle{plain}
 \bibliography{my_bib}
 
